@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   },
   trailingSlash: true,
   reactCompiler: true,
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '/api',
+  },
 };
 
 export default nextConfig;
