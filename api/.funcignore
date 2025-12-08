@@ -7,5 +7,4 @@ getting_started.md
 .env
 src/
 tsconfig.json
-prisma/
 .gitignore
