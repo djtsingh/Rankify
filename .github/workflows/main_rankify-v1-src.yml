@@ -10,15 +10,15 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'api' # Path to the API folder
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
   NODE_VERSION: '22.x' # set this to the node version to use (supports 8.x, 10.x, 12.x)
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
       contents: read #This is required for actions/checkout
-
+      
     steps:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@v4
@@ -29,38 +29,45 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: 'Resolve Project Dependencies Using Npm'
-        shell: bash
+        shell: pwsh
         run: |
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          npm ci
-          npm run build
-          npm prune --production
+          npm install
+          npm run build --if-present
+          npm run test --if-present
           popd
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          path: .
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
-    
+    permissions:
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: node-app
-          path: api
       
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D5F06E38F6B4488787402B12501DB0A2 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_6FBDC80CC38D4F7086AA02C9421FF7A8 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F820ABF370CE4B33BEB3B1D3C3D8D0D7 }}
+
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
         id: fa
         with:
           app-name: 'rankify-v1-src'
           slot-name: 'Production'
-          package: 'api'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_8876C82CB5F4480CA0F3DB6729290EAA }}
-          scm-do-build-during-deployment: false
-          enable-oryx-build: false
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          
