@@ -1,0 +1,109 @@
+// Rankify Database Schema
+// SEO Analysis Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User account model
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  projects  Project[]
+  audits    Audit[]
+  
+  @@map("users")
+}
+
+// Project/Website being tracked
+model Project {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  domain      String
+  url         String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  audits      Audit[]
+  keywords    Keyword[]
+  
+  @@map("projects")
+  @@index([userId])
+}
+
+// SEO Audit results
+model Audit {
+  id          String   @id @default(uuid())
+  userId      String
+  projectId   String?
+  url         String
+  
+  // Overall scores
+  overallScore Int
+  technicalScore Int
+  onPageScore  Int
+  contentScore Int
+  uxScore      Int
+  
+  // Detailed metrics (JSON)
+  technicalIssues Json?
+  onPageIssues    Json?
+  contentIssues   Json?
+  uxIssues        Json?
+  
+  // Metadata
+  userAgent    String?
+  loadTime     Int?     // milliseconds
+  pageSize     Int?     // bytes
+  createdAt    DateTime @default(now())
+  
+  // Relations
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project      Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  
+  @@map("audits")
+  @@index([userId])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// Keyword tracking
+model Keyword {
+  id          String   @id @default(uuid())
+  projectId   String
+  keyword     String
+  
+  // Tracking data
+  density     Float?
+  inTitle     Boolean  @default(false)
+  inH1        Boolean  @default(false)
+  inMeta      Boolean  @default(false)
+  frequency   Int      @default(0)
+  
+  // Metadata
+  lastChecked DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@map("keywords")
+  @@index([projectId])
+  @@unique([projectId, keyword])
+}
