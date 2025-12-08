@@ -32,19 +32,16 @@ jobs:
         shell: bash
         run: |
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          npm ci
+          npm run build
+          npm prune --production
           popd
-
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: release.zip
+          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -55,11 +52,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-
-      - name: Unzip artifact for deployment
-        run: |
-          unzip release.zip
-          rm release.zip
+          path: api
       
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
@@ -67,5 +60,7 @@ jobs:
         with:
           app-name: 'rankify-v1-src'
           slot-name: 'Production'
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          package: 'api'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_8876C82CB5F4480CA0F3DB6729290EAA }}
+          scm-do-build-during-deployment: false
+          enable-oryx-build: false
