@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'api/**'
+      - '.github/workflows/main_rankify-v1-src.yml'
   workflow_dispatch:
 
 env:
