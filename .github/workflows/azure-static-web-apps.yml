@@ -27,15 +27,22 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install dependencies
+      - name: Install root dependencies
         run: pnpm install
 
-      - name: Generate Prisma Client
-        run: |
-          cd api
-          pnpm exec prisma generate
+      - name: Install API dependencies
+        working-directory: ./api
+        run: npm install
 
-      - name: Build Application
+      - name: Generate Prisma Client
+        working-directory: ./api
+        run: npx prisma generate
+
+      - name: Build API
+        working-directory: ./api
+        run: npm run build
+
+      - name: Build Frontend
         run: pnpm build:web
 
       - name: Build And Deploy
