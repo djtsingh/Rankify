@@ -28,10 +28,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: 'Resolve Project Dependencies Using Npm'
+      - name: 'Prepare Package for Remote Build'
         run: |
           cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          npm ci --production
+          # Don't install dependencies - let Azure remote build do it
+          # Just ensure package.json and package-lock.json are present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4

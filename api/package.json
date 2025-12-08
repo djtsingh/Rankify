@@ -17,12 +17,12 @@
     "@azure/functions": "^4.0.0",
     "@prisma/client": "5.22.0",
     "dotenv": "^17.2.3",
-    "prisma": "5.22.0"
+    "prisma": "5.22.0",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@types/node": "18.x",
     "azure-functions-core-tools": "^4.x",
-    "rimraf": "^5.0.0",
-    "typescript": "^5.9.3"
+    "rimraf": "^5.0.0"
   }
 }
