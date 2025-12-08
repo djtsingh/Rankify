@@ -5,3 +5,7 @@ local.settings.json
 test
 getting_started.md
 .env
+src/
+tsconfig.json
+prisma/
+.gitignore
