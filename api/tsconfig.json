@@ -5,7 +5,10 @@
     "outDir": ".",
     "rootDir": "src",
     "sourceMap": true,
-    "strict": false
+    "strict": false,
+    "typeRoots": ["./node_modules/@types"],
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
