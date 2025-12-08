@@ -1,5 +1,39 @@
 # Local Development Guide
 
+## Quick Start - Use Local Testing Scripts
+
+All local testing scripts are in the `local-testing/` folder (not pushed to GitHub).
+
+### Start API Server
+
+```powershell
+cd local-testing
+.\start-api.bat
+```
+
+### Test Endpoints
+
+```powershell
+cd local-testing
+.\test-endpoints.ps1
+```
+
+### Test Database Connection
+
+```powershell
+cd local-testing
+.\test-database.ps1
+```
+
+### Start Full Stack (Web + API)
+
+```powershell
+cd local-testing
+.\start-fullstack.bat
+```
+
+---
+
 ## Prerequisites
 
 1. **Node.js 22+** - Download from https://nodejs.org/

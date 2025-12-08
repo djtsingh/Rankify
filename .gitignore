@@ -1,2 +1,5 @@
 node_modules
 misc/
+
+# Local testing folder - not pushed to GitHub
+local-testing/
