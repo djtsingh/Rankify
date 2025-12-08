@@ -31,14 +31,16 @@ jobs:
       - name: 'Prepare Package for Remote Build'
         run: |
           cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          # Don't install dependencies - let Azure remote build do it
-          # Just ensure package.json and package-lock.json are present
+          # Ensure clean state - remove any local build artifacts
+          rm -rf node_modules functions lib
+          ls -la
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          include-hidden-files: true
 
   deploy:
     runs-on: ubuntu-latest

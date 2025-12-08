@@ -6,3 +6,6 @@ test
 getting_started.md
 .env
 .gitignore
+node_modules
+functions
+lib
