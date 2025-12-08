@@ -31,9 +31,7 @@ jobs:
       - name: 'Resolve Project Dependencies Using Npm'
         run: |
           cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          npm ci
-          npm run build
-          npm prune --production
+          npm ci --production
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
