@@ -31,6 +31,14 @@ jobs:
       - name: Install root dependencies
         run: pnpm install
 
+      - name: Install API dependencies
+        working-directory: ./api
+        run: npm ci
+
+      - name: Build API
+        working-directory: ./api
+        run: npm run build
+
       - name: Build Frontend
         run: pnpm build:web
 
@@ -45,7 +53,7 @@ jobs:
           api_location: "api"
           output_location: ""
           skip_app_build: true
-          skip_api_build: false
+          skip_api_build: true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
