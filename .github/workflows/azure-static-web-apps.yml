@@ -33,7 +33,7 @@ jobs:
       - name: Generate Prisma Client
         run: |
           cd api
-          npx prisma generate
+          pnpm exec prisma generate
 
       - name: Build Application
         run: pnpm build:web
