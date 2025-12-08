@@ -31,7 +31,9 @@ jobs:
         run: pnpm install
 
       - name: Generate Prisma Client
-        run: cd api && pnpm prisma generate
+        run: |
+          cd api
+          npx prisma generate
 
       - name: Build Application
         run: pnpm build:web
