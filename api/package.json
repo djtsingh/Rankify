@@ -7,7 +7,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "npx prisma generate && tsc",
+    "build": "tsc",
     "watch": "tsc -w",
     "clean": "rimraf functions lib dist",
     "prestart": "npm run clean && npm run build",
@@ -16,8 +16,10 @@
   },
   "dependencies": {
     "@azure/functions": "^4.0.0",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
     "@prisma/client": "5.22.0",
-    "dotenv": "^17.2.3",
     "prisma": "5.22.0"
   },
   "devDependencies": {

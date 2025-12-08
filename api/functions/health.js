@@ -11,36 +11,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.health = health;
 const functions_1 = require("@azure/functions");
-const prisma_1 = require("../lib/prisma");
 function health(request, context) {
     return __awaiter(this, void 0, void 0, function* () {
         context.log('Health check requested');
-        // Test database connection
-        let dbStatus = 'disconnected';
-        let dbError = null;
-        try {
-            yield prisma_1.prisma.$queryRaw `SELECT 1`;
-            dbStatus = 'connected';
-        }
-        catch (error) {
-            dbError = error instanceof Error ? error.message : 'Unknown error';
-            context.error('Database connection failed:', error);
-        }
-        const isHealthy = dbStatus === 'connected';
         return {
-            status: isHealthy ? 200 : 503,
+            status: 200,
             headers: {
                 'Content-Type': 'application/json'
             },
             jsonBody: {
-                status: isHealthy ? 'healthy' : 'degraded',
+                status: 'healthy',
                 timestamp: new Date().toISOString(),
                 version: '1.0.0',
                 environment: process.env.AZURE_FUNCTIONS_ENVIRONMENT || 'development',
+                message: 'API running in mock mode - database coming soon',
                 services: {
                     database: {
-                        status: dbStatus,
-                        error: dbError
+                        status: 'not_configured',
+                        note: 'Database will be connected via standalone Azure Functions'
                     }
                 }
             }

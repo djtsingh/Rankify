@@ -1,15 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-import 'dotenv/config';
+// Prisma client temporarily removed for Static Web Apps deployment
+// Will be restored when migrating to standalone Azure Functions
+// Static Web Apps managed functions have limitations with native binaries
 
-// Singleton pattern for Prisma Client
-// Prevents multiple instances in serverless environment
-declare global {
-  // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
-}
-
-export const prisma = globalThis.prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.prisma = prisma;
-}
+// Placeholder export to prevent import errors
+export const prisma = null;

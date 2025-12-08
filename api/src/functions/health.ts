@@ -1,37 +1,23 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { prisma } from "../lib/prisma";
 
 export async function health(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Health check requested');
 
-    // Test database connection
-    let dbStatus = 'disconnected';
-    let dbError = null;
-    
-    try {
-        await prisma.$queryRaw`SELECT 1`;
-        dbStatus = 'connected';
-    } catch (error) {
-        dbError = error instanceof Error ? error.message : 'Unknown error';
-        context.error('Database connection failed:', error);
-    }
-
-    const isHealthy = dbStatus === 'connected';
-
     return {
-        status: isHealthy ? 200 : 503,
+        status: 200,
         headers: {
             'Content-Type': 'application/json'
         },
         jsonBody: {
-            status: isHealthy ? 'healthy' : 'degraded',
+            status: 'healthy',
             timestamp: new Date().toISOString(),
             version: '1.0.0',
             environment: process.env.AZURE_FUNCTIONS_ENVIRONMENT || 'development',
+            message: 'API running in mock mode - database coming soon',
             services: {
                 database: {
-                    status: dbStatus,
-                    error: dbError
+                    status: 'not_configured',
+                    note: 'Database will be connected via standalone Azure Functions'
                 }
             }
         }
