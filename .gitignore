@@ -6,3 +6,7 @@ local-testing/
 
 # Troubleshooting documentation
 docs/troubleshooting/
+
+# Playground - experimental workspace (not for production)
+playground/
+node_modules
