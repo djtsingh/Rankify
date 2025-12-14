@@ -1,0 +1,1 @@
+Go = API Gateway, Request orchestration, Caching, Queue management

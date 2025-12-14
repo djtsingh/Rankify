@@ -1,0 +1,7 @@
+{
+    "python.analysis.extraPaths": [
+        "./backend/SEO-checker/py-services",
+        "./backend/SEO-checker/py-services",
+        "./backend/SEO-checker/py-services"
+    ]
+}
