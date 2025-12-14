@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"rankify/api-gateway/database"
+	"rankify/api-gateway/queue"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -45,7 +46,14 @@ func CreateScan(c *gin.Context) {
 		return
 	}
 
-	// TODO: Publish job to NATS queue
+	// Publish job to NATS queue
+	if err := queue.PublishScanJob(scanID, req.URL); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Failed to queue scan job",
+			"message": err.Error(),
+		})
+		return
+	}
 
 	// Return scan ID immediately
 	c.JSON(http.StatusAccepted, gin.H{

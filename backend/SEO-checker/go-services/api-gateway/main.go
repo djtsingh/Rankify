@@ -8,6 +8,7 @@ import (
 
 	"rankify/api-gateway/database"
 	"rankify/api-gateway/handlers"
+	"rankify/api-gateway/queue"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -24,6 +25,12 @@ func main() {
 		log.Fatal("❌ Failed to initialize database:", err)
 	}
 	defer database.CloseDB()
+
+	// Initialize NATS
+	if err := queue.InitNATS(); err != nil {
+		log.Fatal("❌ Failed to initialize NATS:", err)
+	}
+	defer queue.CloseNATS()
 
 	// Setup Gin router
 	r := gin.Default()
