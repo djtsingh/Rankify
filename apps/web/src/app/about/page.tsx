@@ -3,8 +3,8 @@ import { Target, Users, Zap, Heart, Globe, Award, TrendingUp, Lightbulb } from "
 import Image from "next/image";
 
 export const metadata = {
-  title: "About Us | Rankify",
-  description: "Learn about Rankify's mission to democratize SEO and help businesses of all sizes dominate search rankings.",
+  title: "About | Rankify",
+  description: "Rankify's mission to make SEO accessible for all businesses.",
 };
 
 export default function AboutPage() {

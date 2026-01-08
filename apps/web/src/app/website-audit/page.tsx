@@ -16,7 +16,12 @@ import {
 } from "lucide-react";
 import anime from 'animejs';
 
-// URL autocomplete suggestions
+export const metadata = {
+  title: "SEO Audit | Rankify",
+  description: "Comprehensive website SEO audit and analysis tool.",
+};
+
+export default function WebsiteAuditPage() {
 const URL_SUGGESTIONS = [
   'amazon.com',
   'google.com',

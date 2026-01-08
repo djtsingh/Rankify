@@ -18,6 +18,13 @@ import {
   Globe,
   Users,
   Sparkles,
+
+export const metadata = {
+  title: "Pricing | Rankify",
+  description: "Choose your Rankify plan. Free forever option available.",
+};
+
+export default function PricingPage() {
   Star,
   MessageCircle,
 } from "lucide-react";
