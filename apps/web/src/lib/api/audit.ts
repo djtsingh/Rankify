@@ -411,8 +411,9 @@ export function sortIssuesByPriority(issues: ScanIssue[]): ScanIssue[] {
     const severityOrder = { critical: 0, warning: 1, info: 2 };
     const severityDiff = severityOrder[a.severity] - severityOrder[b.severity];
     if (severityDiff !== 0) return severityDiff;
-    
+
     // Then by impact score
     return b.impact_score - a.impact_score;
   });
 }
+
