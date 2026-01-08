@@ -5,6 +5,8 @@ Real Issue Detector
 Analyzes metrics and detects actual SEO issues based on best practices
 """
 
+import uuid
+
 
 class IssueDetector:
     def __init__(self, metrics):
@@ -16,6 +18,7 @@ class IssueDetector:
         """
         self.metrics = metrics
         self.issues = []
+        self._issue_counter = 0
     
     def detect_all_issues(self):
         """
@@ -38,6 +41,15 @@ class IssueDetector:
         
         return self.issues
     
+    def _severity_to_category(self, severity):
+        """Map severity to category for frontend compatibility"""
+        mapping = {
+            'critical': 'critical',
+            'warning': 'important',
+            'info': 'moderate'
+        }
+        return mapping.get(severity, 'minor')
+    
     def _add_issue(self, issue_type, severity, title, description, recommendation, impact_score, expected_improvement, time_to_fix_hours, data=None):
         """
         Helper method to add an issue
@@ -48,20 +60,34 @@ class IssueDetector:
             title (str): Short title
             description (str): Detailed description
             recommendation (str): How to fix it
-            impact_score (float): 0.0-1.0 (how important this is)
+            impact_score (float): 0.0-1.0 (how important this is) - will be scaled to 0-10 for frontend
             expected_improvement (str): Expected impact
             time_to_fix_hours (int): Estimated time to fix
             data (dict): Additional data
         """
+        # Scale impact_score from 0-1 to 0-10 for frontend compatibility
+        scaled_impact = round(impact_score * 10, 1)
+        
+        # Increment issue counter for unique ID
+        self._issue_counter += 1
+        
+        # Calculate priority based on severity and impact
+        priority_map = {'critical': 1, 'warning': 2, 'info': 3}
+        base_priority = priority_map.get(severity, 3)
+        priority = base_priority + (1 - impact_score)  # Lower number = higher priority
+        
         self.issues.append({
+            'id': str(self._issue_counter),  # Frontend needs string ID
             'type': issue_type,
+            'category': self._severity_to_category(severity),  # Frontend needs category
             'severity': severity,
             'title': title,
             'description': description,
             'recommendation': recommendation,
-            'impact_score': impact_score,
+            'impact_score': scaled_impact,
             'expected_improvement': expected_improvement,
             'time_to_fix_hours': time_to_fix_hours,
+            'priority': round(priority, 2),  # Frontend needs priority
             'data': data or {}
         })
     

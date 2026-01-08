@@ -139,6 +139,7 @@ def save_issues(scan_id, issues_list):
                 INSERT INTO issues (
                     scan_id,
                     type,
+                    category,
                     severity,
                     title,
                     description,
@@ -146,11 +147,13 @@ def save_issues(scan_id, issues_list):
                     impact_score,
                     expected_improvement,
                     time_to_fix_hours,
+                    priority,
                     data
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 scan_id,
                 issue.get('type'),
+                issue.get('category'),
                 issue.get('severity'),
                 issue.get('title'),
                 issue.get('description'),
@@ -158,6 +161,7 @@ def save_issues(scan_id, issues_list):
                 issue.get('impact_score'),
                 issue.get('expected_improvement'),
                 issue.get('time_to_fix_hours'),
+                issue.get('priority'),
                 Json(issue.get('data', {}))
             ))
         

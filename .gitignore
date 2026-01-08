@@ -1,14 +1,57 @@
-node_modules
-misc/
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Local testing folder - not pushed to GitHub
+# Environment files (contain secrets)
+.env
+.env.*
+!.env.example
+local.settings.json
+
+# Build outputs
+dist/
+lib/
+out/
+.next/
+*.tsbuildinfo
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Azure publish profiles (contain credentials)
+*.publishsettings
+publish-profile*.xml
+fresh-publish.xml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local testing folder
 local-testing/
 
 # Troubleshooting documentation
 docs/troubleshooting/
 
-# Playground - experimental workspace (not for production)
+# Playground - experimental workspace
 playground/
-node_modules
-venv/
-__pycache__/
+
+# Misc development notes
+misc/
+
+# Temporary files
+*.tmp
+*.temp
+func-output.txt
+"py env info"

@@ -32,7 +32,9 @@ type ScanResult struct {
 
 // Issue represents an SEO issue
 type Issue struct {
+	ID                  string                 `json:"id"`
 	Type                string                 `json:"type"`
+	Category            *string                `json:"category"`
 	Severity            string                 `json:"severity"`
 	Title               string                 `json:"title"`
 	Description         string                 `json:"description"`
@@ -40,6 +42,7 @@ type Issue struct {
 	ImpactScore         float64                `json:"impact_score"`
 	ExpectedImprovement *string                `json:"expected_improvement"`
 	TimeToFixHours      *int                   `json:"time_to_fix_hours"`
+	Priority            *float64               `json:"priority"`
 	Data                map[string]interface{} `json:"data"`
 }
 
@@ -115,11 +118,11 @@ func GetScanResult(ctx context.Context, scanID string) (*ScanResult, error) {
 // GetIssues retrieves all issues for a scan
 func GetIssues(ctx context.Context, scanID string) ([]Issue, error) {
 	query := `
-		SELECT type, severity, title, description, recommendation,
-		       impact_score, expected_improvement, time_to_fix_hours, data
+		SELECT id, type, category, severity, title, description, recommendation,
+		       impact_score, expected_improvement, time_to_fix_hours, priority, data
 		FROM issues
 		WHERE scan_id = $1
-		ORDER BY impact_score DESC
+		ORDER BY priority ASC, impact_score DESC
 	`
 
 	rows, err := DB.Query(ctx, query, scanID)
@@ -132,7 +135,9 @@ func GetIssues(ctx context.Context, scanID string) ([]Issue, error) {
 	for rows.Next() {
 		var issue Issue
 		err := rows.Scan(
+			&issue.ID,
 			&issue.Type,
+			&issue.Category,
 			&issue.Severity,
 			&issue.Title,
 			&issue.Description,
@@ -140,6 +145,7 @@ func GetIssues(ctx context.Context, scanID string) ([]Issue, error) {
 			&issue.ImpactScore,
 			&issue.ExpectedImprovement,
 			&issue.TimeToFixHours,
+			&issue.Priority,
 			&issue.Data,
 		)
 		if err != nil {
@@ -149,6 +155,24 @@ func GetIssues(ctx context.Context, scanID string) ([]Issue, error) {
 	}
 
 	return issues, nil
+}
+
+// getGradeFromScore converts numeric score to letter grade
+func getGradeFromScore(score int) string {
+	switch {
+	case score >= 95:
+		return "A+"
+	case score >= 85:
+		return "A"
+	case score >= 70:
+		return "B"
+	case score >= 55:
+		return "C"
+	case score >= 40:
+		return "D"
+	default:
+		return "F"
+	}
 }
 
 // GetCompleteScanData retrieves complete scan data
@@ -171,6 +195,7 @@ func GetCompleteScanData(ctx context.Context, scanID string) (map[string]interfa
 		result, err := GetScanResult(ctx, scanID)
 		if err == nil {
 			response["score"] = result.Score
+			response["grade"] = getGradeFromScore(result.Score) // Add grade
 			response["metrics"] = result.Metrics
 		}
 

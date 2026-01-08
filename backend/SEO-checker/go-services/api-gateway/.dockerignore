@@ -1,0 +1,29 @@
+# Ignore local development files
+.env
+*.log
+
+# Git files
+.git
+.gitignore
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Test files
+*_test.go
+test_*.go
+
+# Build artifacts
+*.exe
+api-gateway
+
+# Documentation
+*.md
+!README.md
+
+# Local testing files
+.env.local
+.env.development

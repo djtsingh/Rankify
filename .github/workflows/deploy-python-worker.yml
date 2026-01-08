@@ -1,0 +1,84 @@
+# Deploy Python SEO Worker to Azure Container Apps
+name: Deploy Python Worker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/SEO-checker/py-services/**'
+  workflow_dispatch:
+
+env:
+  AZURE_CONTAINER_REGISTRY: rankifyacr.azurecr.io
+  IMAGE_NAME: seo-worker
+  RESOURCE_GROUP: rankify-v1
+  CONTAINER_APP_NAME: seo-worker
+  CONTAINER_APP_ENV: rankify-env
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Log in to Azure Container Registry
+        run: |
+          az acr login --name rankifyacr
+      
+      - name: Build and push Docker image
+        working-directory: backend/SEO-checker/py-services
+        run: |
+          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+      
+      - name: Deploy to Azure Container Apps
+        run: |
+          # Check if container app exists
+          EXISTS=$(az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "name" -o tsv 2>/dev/null || echo "")
+          
+          if [ -z "$EXISTS" ]; then
+            echo "Creating new Container App..."
+            az containerapp create \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment ${{ env.CONTAINER_APP_ENV }} \
+              --image ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+              --registry-server ${{ env.AZURE_CONTAINER_REGISTRY }} \
+              --registry-username ${{ secrets.ACR_USERNAME }} \
+              --registry-password ${{ secrets.ACR_PASSWORD }} \
+              --min-replicas 0 \
+              --max-replicas 3 \
+              --scale-rule-name queue-scale \
+              --scale-rule-type azure-queue \
+              --scale-rule-metadata "queueName=scan-jobs" "queueLength=5" "connectionFromEnv=AZURE_STORAGE_CONNECTION_STRING" \
+              --secrets "storage-connection=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" "db-url=${{ secrets.DATABASE_URL }}" \
+              --env-vars "AZURE_STORAGE_CONNECTION_STRING=secretref:storage-connection" "DATABASE_URL=secretref:db-url" "QUEUE_NAME=scan-jobs"
+          else
+            echo "Updating existing Container App..."
+            az containerapp update \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          fi
+      
+      - name: Verify deployment
+        run: |
+          echo "Checking Container App status..."
+          az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "{name:name, provisioningState:properties.provisioningState, runningStatus:properties.runningStatus}" \
+            -o table

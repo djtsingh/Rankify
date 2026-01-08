@@ -1,15 +1,19 @@
 import type { NextConfig } from "next";
 
+// Only use static export in production build (for Azure Static Web Apps)
+// In development, we need dynamic routing for scan IDs
+const isProduction = process.env.NODE_ENV === 'production';
+
 const nextConfig: NextConfig = {
-  output: 'export',
+  // Static export ONLY for production builds (Azure Static Web Apps deployment)
+  // Disabled in development to allow dynamic routes with runtime scan IDs
+  ...(isProduction && { output: 'export' }),
   images: {
-    unoptimized: true, // Required for static export
+    unoptimized: true,
   },
   trailingSlash: true,
-  reactCompiler: true,
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '/api',
-  },
+  // Don't override NEXT_PUBLIC_API_URL here - it's set in .env.local
+  // The client.ts file has its own fallback for local development
 };
 
 export default nextConfig;

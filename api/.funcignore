@@ -6,5 +6,7 @@ test
 getting_started.md
 .env
 .gitignore
-node_modules
-dist
+src
+tsconfig.json
+prisma/migrations
+.venv

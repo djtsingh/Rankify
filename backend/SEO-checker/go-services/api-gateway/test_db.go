@@ -1,4 +1,9 @@
+//go:build ignore
+// +build ignore
+
 // go-services/api-gateway/test_db.go
+// This file is excluded from normal builds.
+// Run manually with: go run test_db.go
 
 package main
 
