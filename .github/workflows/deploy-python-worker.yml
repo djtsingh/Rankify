@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - 'backend/SEO-checker/py-services/**'
+      - '.github/workflows/deploy-python-worker.yml'
   workflow_dispatch:
 
 env:
