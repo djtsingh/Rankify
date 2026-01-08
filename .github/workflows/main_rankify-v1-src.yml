@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node ${{ env.NODE_VERSION }} Environment
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -67,4 +67,22 @@ jobs:
           scm-do-build-during-deployment: true
           enable-oryx-build: true
           remote-build: true
+      
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "=== AZURE FUNCTIONS DEPLOYMENT SUMMARY ==="
+          echo "Function App: rankify-v1-src"
+          echo "Slot: Production"
+          echo "Package: API functions"
+          echo "Commit: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
+          
+          if [ ${{ job.status }} = 'success' ]; then
+            echo "Status: ✅ SUCCESS"
+            echo "The Azure Functions have been successfully deployed!"
+          else
+            echo "Status: ❌ FAILED"
+            echo "Deployment failed. Check the logs above for details."
+          fi
           

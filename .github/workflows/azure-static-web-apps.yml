@@ -8,6 +8,8 @@ on:
       - 'apps/web/**'
       - 'staticwebapp.config.json'
       - '.github/workflows/azure-static-web-apps.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
@@ -16,6 +18,8 @@ on:
       - 'apps/web/**'
       - 'staticwebapp.config.json'
       - '.github/workflows/azure-static-web-apps.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
 
 jobs:
   build_and_deploy_job:
@@ -24,12 +28,12 @@ jobs:
     name: Build and Deploy Job
     environment: AZ_resources
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
 
@@ -39,22 +43,22 @@ jobs:
       - name: Install root dependencies
         run: pnpm install
 
-      - name: Install API dependencies
-        working-directory: ./api
-        run: npm ci
-
-      - name: Build API
-        working-directory: ./api
-        run: npm run build
-
-      - name: Prune dev dependencies
-        working-directory: ./api
-        run: npm prune --production
-
       - name: Build Frontend
         run: pnpm build:web
         env:
           NEXT_PUBLIC_API_URL: https://rankify-v1-src.azurewebsites.net
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "apps/web/out" ]; then
+            echo "Build output directory not found!"
+            exit 1
+          fi
+          if [ ! -f "apps/web/out/index.html" ]; then
+            echo "index.html not found in build output!"
+            exit 1
+          fi
+          echo "Build output verified successfully"
 
       - name: Copy staticwebapp.config.json to output
         run: cp staticwebapp.config.json apps/web/out/
@@ -75,6 +79,23 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
           FUNCTIONS_WORKER_RUNTIME: node
+      
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "=== AZURE STATIC WEB APP DEPLOYMENT SUMMARY ==="
+          echo "App Location: apps/web/out"
+          echo "Commit: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Environment: AZ_resources"
+          
+          if [ ${{ job.status }} = 'success' ]; then
+            echo "Status: ✅ SUCCESS"
+            echo "The web application has been successfully deployed!"
+          else
+            echo "Status: ❌ FAILED"
+            echo "Deployment failed. Check the logs above for details."
+          fi
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

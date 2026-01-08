@@ -1,22 +1,13 @@
 /**
- * Results Page Server Wrapper
- * 
- * This implements the "Wrapper Fix" pattern for Next.js static export:
- * - generateStaticParams returns a placeholder to satisfy static export
- * - ResultsPageContent is a client component that handles everything
- * - The client component reads scanId from URL using useParams()
+ * Results Page - Static Route for Static Export Compatibility
+ *
+ * Uses query parameters instead of dynamic routes for Next.js static export:
+ * - /website-audit/results?scan=123&url=example.com
+ * - Compatible with Azure Static Web Apps deployment
  */
 
 import { Suspense } from 'react';
 import ResultsPageContent from './ResultsPageContent';
-
-// For static export - we must return at least one param
-// The actual scanId is read client-side via useParams()
-// This "placeholder" route enables the pattern to work
-// Only use in production (static export mode)
-export const generateStaticParams = process.env.NODE_ENV === 'production' ? 
-  () => [{ scanId: 'placeholder' }] : 
-  undefined;
 
 // Loading skeleton while client component hydrates
 function LoadingSkeleton() {

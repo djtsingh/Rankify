@@ -153,7 +153,8 @@ function WebsiteAuditContent() {
     const urlParam = url || searchParams.get('url') || '';
     // Use returnUrl to enable back navigation with state
     const returnUrl = encodeURIComponent(`/website-audit?scan=${scanParam}&url=${encodeURIComponent(urlParam)}`);
-    router.push(`/website-audit/results/${scanParam}?url=${encodeURIComponent(urlParam)}&returnUrl=${returnUrl}`);
+    // Use query parameters instead of dynamic routes for static export compatibility
+    router.push(`/website-audit/results?scan=${scanParam}&url=${encodeURIComponent(urlParam)}&returnUrl=${returnUrl}`);
   };
 
   // Update URL input when param changes

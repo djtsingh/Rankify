@@ -28,6 +28,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Validate workflow trigger paths
+        run: |
+          echo "Validating that workflow trigger paths exist..."
+          if [ ! -d "backend/SEO-checker/py-services" ]; then
+            echo "backend/SEO-checker/py-services directory not found!"
+            exit 1
+          fi
+          echo "Workflow trigger validation passed"
+      
       - name: Log in to Azure
         uses: azure/login@v2
         with:
@@ -35,21 +44,67 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
-      - name: Log in to Azure Container Registry
+      - name: Validate prerequisites
         run: |
-          az acr login --name rankifyacr
+          echo "Validating deployment prerequisites..."
+          
+          # Check if required secrets are available
+          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then
+            echo "AZURE_CLIENT_ID secret not found!"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" ]; then
+            echo "AZURE_STORAGE_CONNECTION_STRING secret not found!"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "DATABASE_URL secret not found!"
+            exit 1
+          fi
+          
+          # Check if Docker context is clean
+          docker system prune -f
+          
+          # Validate that the source code exists
+          if [ ! -f "backend/SEO-checker/py-services/Dockerfile" ]; then
+            echo "Dockerfile not found!"
+            exit 1
+          fi
+          
+          if [ ! -f "backend/SEO-checker/py-services/requirements.txt" ]; then
+            echo "requirements.txt not found!"
+            exit 1
+          fi
+          
+          echo "Prerequisites validation completed successfully"
       
       - name: Build and push Docker image
         working-directory: backend/SEO-checker/py-services
         run: |
+          echo "Building Docker image..."
           docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
-          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
+          
+          echo "Validating image..."
+          # Test that the image can start (basic health check)
+          docker run --rm ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} python --version || (echo "Image validation failed!" && exit 1)
+          
+          echo "Tagging and pushing images..."
+          docker tag ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          echo "Image build and push completed successfully"
       
       - name: Deploy to Azure Container Apps
+        id: deploy
         run: |
+          set -e  # Exit on any error
+          
+          echo "Starting deployment process..."
+          
           # Check if container app exists
+          echo "Checking if Container App exists..."
           EXISTS=$(az containerapp show \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
@@ -72,13 +127,25 @@ jobs:
               --scale-rule-metadata "queueName=scan-jobs" "queueLength=5" "connectionFromEnv=AZURE_STORAGE_CONNECTION_STRING" \
               --secrets "storage-connection=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" "db-url=${{ secrets.DATABASE_URL }}" \
               --env-vars "AZURE_STORAGE_CONNECTION_STRING=secretref:storage-connection" "DATABASE_URL=secretref:db-url" "QUEUE_NAME=scan-jobs"
+            
+            if [ $? -ne 0 ]; then
+              echo "Failed to create Container App!"
+              exit 1
+            fi
           else
             echo "Updating existing Container App..."
             az containerapp update \
               --name ${{ env.CONTAINER_APP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --image ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            
+            if [ $? -ne 0 ]; then
+              echo "Failed to update Container App!"
+              exit 1
+            fi
           fi
+          
+          echo "Deployment command completed successfully"
       
       - name: Verify deployment
         run: |
@@ -88,3 +155,54 @@ jobs:
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "{name:name, provisioningState:properties.provisioningState, runningStatus:properties.runningStatus}" \
             -o table
+          
+          # Wait for deployment to be ready
+          echo "Waiting for deployment to stabilize..."
+          for i in {1..30}; do
+            STATUS=$(az containerapp show \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --query "properties.provisioningState" -o tsv)
+            
+            if [ "$STATUS" = "Succeeded" ]; then
+              echo "Deployment succeeded!"
+              break
+            elif [ "$STATUS" = "Failed" ]; then
+              echo "Deployment failed!"
+              exit 1
+            fi
+            
+            echo "Waiting... (attempt $i/30)"
+            sleep 10
+          done
+          
+          if [ "$STATUS" != "Succeeded" ]; then
+            echo "Deployment did not succeed within timeout"
+            exit 1
+          fi
+          
+          # Basic health check - try to get container logs
+          echo "Performing basic health check..."
+          az containerapp logs show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --tail 10 || echo "Could not retrieve logs (this may be normal for newly deployed apps)"
+      
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "=== DEPLOYMENT SUMMARY ==="
+          echo "Container App: ${{ env.CONTAINER_APP_NAME }}"
+          echo "Resource Group: ${{ env.RESOURCE_GROUP }}"
+          echo "Image: ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
+          
+          if [ ${{ job.status }} = 'success' ]; then
+            echo "Status: ✅ SUCCESS"
+            echo "The Python worker has been successfully deployed!"
+          else
+            echo "Status: ❌ FAILED"
+            echo "Deployment failed. Check the logs above for details."
+            exit 1
+          fi
