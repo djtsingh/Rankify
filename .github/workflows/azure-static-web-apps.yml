@@ -53,6 +53,8 @@ jobs:
 
       - name: Build Frontend
         run: pnpm build:web
+        env:
+          NEXT_PUBLIC_API_URL: https://rankify-v1-src.azurewebsites.net
 
       - name: Copy staticwebapp.config.json to output
         run: cp staticwebapp.config.json apps/web/out/
