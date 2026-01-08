@@ -4,11 +4,6 @@ import PageLayout from "@/components/layout/PageLayout";
 import { Mail, MessageSquare, MapPin, Clock, Send, Phone, Globe, Twitter, Linkedin, Github } from "lucide-react";
 import { useState } from "react";
 
-export const metadata = {
-  title: "Contact | Rankify",
-  description: "Contact Rankify for SEO support and inquiries.",
-};
-
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: "",
