@@ -12,7 +12,7 @@ on:
 env:
   AZURE_CONTAINER_REGISTRY: rankifyacr.azurecr.io
   IMAGE_NAME: seo-worker
-  RESOURCE_GROUP: rankify-v1
+  RESOURCE_GROUP: rankify
   CONTAINER_APP_NAME: seo-worker
   CONTAINER_APP_ENV: rankify-env
 
