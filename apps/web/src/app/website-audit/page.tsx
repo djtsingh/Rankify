@@ -12,7 +12,7 @@ import {
   AlertTriangle, CheckCheck, XCircle, ArrowDown,
   Download, Share2, Star, Users, Timer, Gauge, Activity, Cpu,
   ChevronRight, ChevronDown, RefreshCw, PieChart, Type, ImageIcon, LinkIcon,
-  Heading1, Play, ExternalLink, History, X
+  Heading1, Play, ExternalLink, History
 } from "lucide-react";
 import anime from 'animejs';
 
@@ -60,7 +60,6 @@ function WebsiteAuditContent() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
   const [recentUrls, setRecentUrls] = useState<string[]>([]);
-  const [showDetailedResults, setShowDetailedResults] = useState(false);
   
   // Refs for animations
   const viewReportButtonRef = useRef<HTMLButtonElement>(null);
@@ -150,8 +149,11 @@ function WebsiteAuditContent() {
 
   // Navigate to full results
   const handleViewFullReport = () => {
-    // For static export, show detailed results inline instead of navigating
-    setShowDetailedResults(true);
+    const scanParam = scanId || searchParams.get('scan') || 'demo';
+    const urlParam = url || searchParams.get('url') || '';
+    // Use returnUrl to enable back navigation with state
+    const returnUrl = encodeURIComponent(`/website-audit?scan=${scanParam}&url=${encodeURIComponent(urlParam)}`);
+    router.push(`/website-audit/results/${scanParam}?url=${encodeURIComponent(urlParam)}&returnUrl=${returnUrl}`);
   };
 
   // Update URL input when param changes
@@ -1283,97 +1285,6 @@ function WebsiteAuditContent() {
           </div>
         </div>
       </section>
-
-      {/* Detailed Results Modal */}
-      {showDetailedResults && auditResults && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
-              <div>
-                <h2 className="text-2xl font-bold text-white">Detailed Audit Report</h2>
-                <p className="text-zinc-400 mt-1">Comprehensive analysis for {url || 'your website'}</p>
-              </div>
-              <button
-                onClick={() => setShowDetailedResults(false)}
-                className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-zinc-400" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              {/* Score Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-zinc-800/50 rounded-xl p-6 text-center">
-                  <div className="text-4xl font-bold text-white mb-2">{auditResults.score || 0}</div>
-                  <div className="text-zinc-400">Overall Score</div>
-                </div>
-                <div className="bg-zinc-800/50 rounded-xl p-6 text-center">
-                  <div className="text-4xl font-bold text-white mb-2">{auditResults.grade || 'N/A'}</div>
-                  <div className="text-zinc-400">Grade</div>
-                </div>
-                <div className="bg-zinc-800/50 rounded-xl p-6 text-center">
-                  <div className="text-4xl font-bold text-white mb-2">{auditResults.issues?.length || 0}</div>
-                  <div className="text-zinc-400">Issues Found</div>
-                </div>
-              </div>
-
-              {/* Issues List */}
-              {auditResults.issues && auditResults.issues.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-white mb-4">Issues Found</h3>
-                  {auditResults.issues.slice(0, 20).map((issue, index) => (
-                    <div key={index} className="bg-zinc-800/50 rounded-lg p-4 border-l-4 border-l-red-500">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="text-white font-medium mb-1">{issue.title}</h4>
-                          <p className="text-zinc-400 text-sm mb-2">{issue.description}</p>
-                          <div className="flex items-center gap-4 text-xs text-zinc-500">
-                            <span>Severity: <span className="text-red-400">{issue.severity}</span></span>
-                            <span>Impact: {issue.impact_score}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {auditResults.issues.length > 20 && (
-                    <div className="text-center text-zinc-400 py-4">
-                      And {auditResults.issues.length - 20} more issues...
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Metrics */}
-              {auditResults.metrics && (
-                <div className="mt-8">
-                  <h3 className="text-xl font-semibold text-white mb-4">Technical Metrics</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-cyan-400">{auditResults.metrics.word_count || 0}</div>
-                      <div className="text-zinc-400 text-sm">Words</div>
-                    </div>
-                    <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-emerald-400">{auditResults.metrics.h1_count || 0}</div>
-                      <div className="text-zinc-400 text-sm">H1 Tags</div>
-                    </div>
-                    <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-purple-400">{auditResults.metrics.image_count || 0}</div>
-                      <div className="text-zinc-400 text-sm">Images</div>
-                    </div>
-                    <div className="bg-zinc-800/50 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-amber-400">{auditResults.metrics.link_count || 0}</div>
-                      <div className="text-zinc-400 text-sm">Links</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </div>
