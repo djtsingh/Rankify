@@ -52,7 +52,7 @@ const SCAN_STEPS = [
 export function useAudit(initialScanId?: string | null): UseAuditReturn {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [state, setState] = useState<AuditState>('idle');
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
@@ -60,7 +60,10 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
   const [scanId, setScanId] = useState<string | null>(initialScanId || null);
   const [results, setResults] = useState<ScanResult | null>(null);
   const [lastUrl, setLastUrl] = useState<string>('');
-  
+
+  // Track if we've already processed the initial URL params
+  const [hasProcessedInitialParams, setHasProcessedInitialParams] = useState(false);
+
   const progressInterval = useRef<NodeJS.Timeout | undefined>(undefined);
   const pollingAborted = useRef(false);
 
@@ -99,18 +102,39 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
    * Update URL with query parameters
    */
   const updateUrlParams = useCallback((newScanId: string, url: string) => {
-    const params = new URLSearchParams();
+    console.log('[useAudit] Updating URL params:', { newScanId, url });
+    const params = new URLSearchParams(searchParams.toString());
     params.set('scan', newScanId);
     params.set('url', url);
-    router.push(`?${params.toString()}`, { scroll: false });
-  }, [router]);
+
+    // For static exports, use window.history to avoid router issues
+    if (typeof window !== 'undefined') {
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    } else {
+      // Fallback for SSR
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [router, searchParams]);
 
   /**
    * Clear URL parameters
    */
   const clearUrlParams = useCallback(() => {
-    router.push('/website-audit', { scroll: false });
-  }, [router]);
+    console.log('[useAudit] Clearing URL params');
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('scan');
+    params.delete('url');
+
+    // For static exports, use window.history to avoid router issues
+    if (typeof window !== 'undefined') {
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    } else {
+      // Fallback for SSR
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [router, searchParams]);
 
   /**
    * Start a new audit scan
@@ -228,7 +252,11 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
     const scanIdParam = searchParams.get('scan');
     const urlParam = searchParams.get('url');
 
-    if (scanIdParam && scanIdParam !== scanId && state === 'idle') {
+    // Only load if we have a scanId param, no current scanId, we're in idle state,
+    // and we haven't already processed the initial params
+    if (scanIdParam && !scanId && state === 'idle' && !hasProcessedInitialParams && scanIdParam !== initialScanId) {
+      console.log('[useAudit] Loading existing scan:', scanIdParam);
+      setHasProcessedInitialParams(true);
       setScanId(scanIdParam);
       setState('polling');
       setProgress(50);
@@ -239,6 +267,7 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
         maxAttempts: 30,
       })
         .then((scanResults) => {
+          console.log('[useAudit] Scan results loaded successfully');
           setResults(scanResults);
           setState('complete');
           setProgress(100);
@@ -248,11 +277,12 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
           }
         })
         .catch((err) => {
+          console.error('[useAudit] Failed to load scan results:', err);
           setState('error');
           setError(err instanceof Error ? err.message : 'Failed to load scan results');
         });
     }
-  }, [searchParams, scanId, state]);
+  }, [searchParams, scanId, state, initialScanId, hasProcessedInitialParams]);
 
   /**
    * Cleanup on unmount
