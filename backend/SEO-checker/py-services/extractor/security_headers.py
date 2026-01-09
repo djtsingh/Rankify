@@ -33,7 +33,6 @@ class SecurityHeadersAnalyzer:
     Checks for critical security headers and provides recommendations.
     """
     
-    # Security headers to check with their importance
     HEADERS_CONFIG = {
         'Strict-Transport-Security': {
             'importance': 'critical',
@@ -101,7 +100,6 @@ class SecurityHeadersAnalyzer:
         },
     }
     
-    # Additional headers to detect but not require
     OPTIONAL_HEADERS = {
         'Cache-Control': 'Controls caching behavior',
         'X-DNS-Prefetch-Control': 'Controls DNS prefetching',
@@ -137,7 +135,6 @@ class SecurityHeadersAnalyzer:
                 return True
         except httpx.RequestError:
             try:
-                # Fallback to GET request if HEAD fails
                 async with httpx.AsyncClient(
                     follow_redirects=True,
                     timeout=self.timeout,
@@ -172,7 +169,6 @@ class SecurityHeadersAnalyzer:
                 return True
         except httpx.RequestError:
             try:
-                # Fallback to GET request if HEAD fails
                 with httpx.Client(
                     follow_redirects=True,
                     timeout=self.timeout,
@@ -217,7 +213,6 @@ class SecurityHeadersAnalyzer:
         warnings = 0
         
         for header_name, config in self.HEADERS_CONFIG.items():
-            # Check if header exists (case-insensitive)
             header_value = self._get_header_value(header_name)
             is_present = header_value is not None
             is_good = config['good_values'](header_value) if is_present else False
@@ -257,10 +252,6 @@ class SecurityHeadersAnalyzer:
                     'description': config['description'],
                 })
         
-        # Calculate score (0-100)
-        # Critical headers worth 20 points each (2 critical = 40 points)
-        # High headers worth 15 points each (2 high = 30 points)
-        # Medium headers worth 6 points each (5 medium = 30 points)
         critical_headers = sum(1 for h, c in self.HEADERS_CONFIG.items() 
                              if c['importance'] == 'critical' and results['headers'][h]['isSecure'])
         high_headers = sum(1 for h, c in self.HEADERS_CONFIG.items() 
@@ -271,7 +262,6 @@ class SecurityHeadersAnalyzer:
         score = (critical_headers * 20) + (high_headers * 15) + (medium_headers * 6)
         score = min(100, score)
         
-        # HTTPS bonus
         if self._is_https:
             score = min(100, score + 10)
         
@@ -284,7 +274,6 @@ class SecurityHeadersAnalyzer:
             'missing': total_checks - passed - warnings,
         }
         
-        # Sort recommendations by importance
         importance_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
         results['recommendations'].sort(key=lambda x: importance_order.get(x['importance'], 4))
         

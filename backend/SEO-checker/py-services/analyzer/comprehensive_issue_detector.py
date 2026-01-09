@@ -1,4 +1,3 @@
-# py-services/analyzer/comprehensive_issue_detector.py
 
 """
 Comprehensive Issue Detector
@@ -52,36 +51,29 @@ class ComprehensiveIssueDetector:
         Returns:
             List of issues in frontend-compatible format
         """
-        # On-Page SEO Issues
         self._check_title()
         self._check_meta_description()
         self._check_h1_tags()
         self._check_heading_hierarchy()
         self._check_content_length()
         
-        # Image Issues
         self._check_images_alt()
         self._check_images_lazy_loading()
         
-        # Link Issues
         self._check_internal_links()
         self._check_external_links()
         
-        # Technical Issues
         self._check_https()
         self._check_canonical()
         self._check_viewport()
         self._check_structured_data()
         self._check_render_blocking()
         
-        # Social Issues
         self._check_open_graph()
         self._check_twitter_cards()
         
-        # Accessibility Issues
         self._check_accessibility()
         
-        # Sort by priority
         self.issues.sort(key=lambda x: (self.CATEGORIES.get(x['category'], 5), x['priority']))
         
         return self.issues
@@ -122,16 +114,12 @@ class ComprehensiveIssueDetector:
             'data': data or {},
         })
     
-    # ========================================
-    # TITLE TAG CHECKS
-    # ========================================
     
     def _check_title(self):
         """Check title tag issues"""
         on_page = self.metrics.get('onPage', {})
         title_data = on_page.get('title', {})
         
-        # Also check flat metrics for compatibility
         title = title_data.get('content') or self.metrics.get('title', '')
         length = title_data.get('length') or self.metrics.get('title_length', 0)
         
@@ -201,9 +189,6 @@ class ComprehensiveIssueDetector:
                 data={'current_length': length, 'current_title': title}
             )
     
-    # ========================================
-    # META DESCRIPTION CHECKS
-    # ========================================
     
     def _check_meta_description(self):
         """Check meta description issues"""
@@ -278,9 +263,6 @@ class ComprehensiveIssueDetector:
                 data={'current_length': length}
             )
     
-    # ========================================
-    # HEADING CHECKS
-    # ========================================
     
     def _check_h1_tags(self):
         """Check H1 tag issues"""
@@ -363,9 +345,6 @@ class ComprehensiveIssueDetector:
                 data={'issues': issues}
             )
     
-    # ========================================
-    # CONTENT CHECKS
-    # ========================================
     
     def _check_content_length(self):
         """Check content length issues"""
@@ -398,9 +377,6 @@ class ComprehensiveIssueDetector:
                 data={'word_count': word_count}
             )
     
-    # ========================================
-    # IMAGE CHECKS
-    # ========================================
     
     def _check_images_alt(self):
         """Check image alt text issues"""
@@ -462,9 +438,6 @@ class ComprehensiveIssueDetector:
                 data={'lazy_loaded': lazy_loaded, 'total': total}
             )
     
-    # ========================================
-    # LINK CHECKS
-    # ========================================
     
     def _check_internal_links(self):
         """Check internal linking"""
@@ -527,9 +500,6 @@ class ComprehensiveIssueDetector:
                 data={'external_count': count, 'nofollow_count': nofollow}
             )
     
-    # ========================================
-    # TECHNICAL CHECKS
-    # ========================================
     
     def _check_https(self):
         """Check HTTPS implementation"""
@@ -679,9 +649,6 @@ class ComprehensiveIssueDetector:
                 data={'blocking_count': blocking}
             )
     
-    # ========================================
-    # SOCIAL CHECKS
-    # ========================================
     
     def _check_open_graph(self):
         """Check Open Graph implementation"""
@@ -743,9 +710,6 @@ class ComprehensiveIssueDetector:
                 ]
             )
     
-    # ========================================
-    # ACCESSIBILITY CHECKS
-    # ========================================
     
     def _check_accessibility(self):
         """Check accessibility issues"""
@@ -784,14 +748,10 @@ class ComprehensiveIssueDetector:
             )
 
 
-# ============================================
-# TEST
-# ============================================
 
 if __name__ == "__main__":
     import json
     
-    # Sample metrics (would come from ComprehensiveHTMLParser)
     sample_metrics = {
         'url': 'https://example.com/test',
         'title': 'Short',

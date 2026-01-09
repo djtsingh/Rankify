@@ -8,14 +8,12 @@ import math
 from collections import Counter
 from typing import List, Dict, Tuple, Optional
 
-# Try importing sklearn for TF-IDF, fall back to manual implementation
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
 
-# Try importing textstat for readability, fall back to manual
 try:
     import textstat
     HAS_TEXTSTAT = True
@@ -29,17 +27,13 @@ class TextAnalyzer:
     Provides keyword extraction, readability analysis, and content metrics.
     """
     
-    # Extended stop words list for better keyword extraction
     STOP_WORDS = frozenset({
-        # Articles
         'a', 'an', 'the',
-        # Pronouns
         'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', "you're",
         "you've", "you'll", "you'd", 'your', 'yours', 'yourself', 'yourselves',
         'he', 'him', 'his', 'himself', 'she', "she's", 'her', 'hers', 'herself',
         'it', "it's", 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves',
         'what', 'which', 'who', 'whom', 'this', 'that', "that'll", 'these', 'those',
-        # Verbs
         'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
         'having', 'do', 'does', 'did', 'doing', 'would', 'should', 'could', 'ought',
         "i'm", "you're", "he's", "she's", "it's", "we're", "they're", "i've", "you've",
@@ -49,17 +43,14 @@ class TextAnalyzer:
         "wouldn't", "shan't", "shouldn't", "can't", 'cannot', "couldn't", "mustn't",
         "let's", "that's", "who's", "what's", "here's", "there's", "when's", "where's",
         "why's", "how's",
-        # Prepositions
         'about', 'above', 'across', 'after', 'against', 'along', 'among', 'around',
         'at', 'before', 'behind', 'below', 'beneath', 'beside', 'between', 'beyond',
         'by', 'down', 'during', 'except', 'for', 'from', 'in', 'inside', 'into',
         'like', 'near', 'of', 'off', 'on', 'onto', 'out', 'outside', 'over', 'past',
         'since', 'through', 'throughout', 'till', 'to', 'toward', 'under', 'underneath',
         'until', 'up', 'upon', 'with', 'within', 'without',
-        # Conjunctions
         'and', 'as', 'because', 'but', 'if', 'or', 'so', 'than', 'that', 'though',
         'unless', 'until', 'when', 'where', 'whether', 'while', 'yet',
-        # Common words
         'all', 'also', 'any', 'both', 'each', 'either', 'else', 'ever', 'every',
         'few', 'first', 'get', 'got', 'just', 'last', 'least', 'less', 'made',
         'make', 'many', 'may', 'might', 'more', 'most', 'much', 'must', 'need',
@@ -69,7 +60,6 @@ class TextAnalyzer:
         'such', 'take', 'taken', 'tell', 'then', 'there', 'therefore', 'thing',
         'think', 'three', 'thus', 'too', 'two', 'use', 'used', 'using', 'very',
         'want', 'way', 'well', 'went', 'will', 'work', 'year', 'years',
-        # Web-specific stop words
         'click', 'here', 'read', 'more', 'learn', 'see', 'view', 'visit', 'page',
         'site', 'website', 'web', 'link', 'links', 'menu', 'home', 'contact',
         'login', 'sign', 'register', 'search', 'back', 'next', 'previous',
@@ -91,7 +81,6 @@ class TextAnalyzer:
         self.title = title
         self.meta_description = meta_description
         
-        # Process text
         self.clean_text = self._clean_text(text)
         self.words = self._tokenize(self.clean_text)
         self.sentences = self._split_sentences(text)
@@ -99,25 +88,19 @@ class TextAnalyzer:
         
     def _clean_text(self, text: str) -> str:
         """Clean and normalize text."""
-        # Remove URLs
         text = re.sub(r'https?://\S+|www\.\S+', '', text)
-        # Remove email addresses
         text = re.sub(r'\S+@\S+', '', text)
-        # Remove special characters but keep spaces and basic punctuation
         text = re.sub(r'[^\w\s\.\!\?\,\-]', ' ', text)
-        # Normalize whitespace
         text = re.sub(r'\s+', ' ', text)
         return text.strip()
     
     def _tokenize(self, text: str) -> List[str]:
         """Tokenize text into words."""
-        # Split on whitespace and punctuation
         words = re.findall(r'\b[a-zA-Z]{2,}\b', text.lower())
         return words
     
     def _split_sentences(self, text: str) -> List[str]:
         """Split text into sentences."""
-        # Split on sentence-ending punctuation
         sentences = re.split(r'[.!?]+', text)
         return [s.strip() for s in sentences if s.strip() and len(s.strip().split()) > 2]
     
@@ -132,13 +115,11 @@ class TextAnalyzer:
         if len(word) <= 3:
             return 1
             
-        # Remove silent e at end
         if word.endswith('e'):
             word = word[:-1]
         if word.endswith('es') or word.endswith('ed'):
             word = word[:-2]
             
-        # Count vowel groups
         vowels = 'aeiouy'
         count = 0
         prev_is_vowel = False
@@ -156,10 +137,8 @@ class TextAnalyzer:
         if len(word) < 6:
             return False
         syllables = self._count_syllables(word)
-        # Complex words have 3+ syllables and don't end in common suffixes
         common_suffixes = ('ing', 'ed', 'es', 'ly')
         if syllables >= 3:
-            # Check if removing common suffix still leaves 3+ syllables
             for suffix in common_suffixes:
                 if word.endswith(suffix):
                     base_syllables = self._count_syllables(word[:-len(suffix)])
@@ -169,7 +148,6 @@ class TextAnalyzer:
             return True
         return False
     
-    # ==================== TF-IDF Keyword Extraction ====================
     
     def extract_keywords_tfidf(self, top_n: int = 10) -> List[Dict]:
         """
@@ -183,16 +161,13 @@ class TextAnalyzer:
     
     def _tfidf_sklearn(self, top_n: int) -> List[Dict]:
         """Use sklearn TfidfVectorizer for keyword extraction."""
-        # Filter words
         filtered_words = [w for w in self.words if w not in self.STOP_WORDS and len(w) > 2]
         
         if len(filtered_words) < 3:
             return []
         
-        # Create document from filtered words
         document = ' '.join(filtered_words)
         
-        # TF-IDF with n-grams (1-2 words)
         try:
             vectorizer = TfidfVectorizer(
                 ngram_range=(1, 2),
@@ -205,7 +180,6 @@ class TextAnalyzer:
             feature_names = vectorizer.get_feature_names_out()
             scores = tfidf_matrix.toarray()[0]
             
-            # Get top keywords with scores
             keyword_scores = list(zip(feature_names, scores))
             keyword_scores.sort(key=lambda x: x[1], reverse=True)
             
@@ -231,28 +205,22 @@ class TextAnalyzer:
     
     def _tfidf_manual(self, top_n: int) -> List[Dict]:
         """Manual TF-IDF implementation as fallback."""
-        # Filter words
         filtered_words = [w for w in self.words if w not in self.STOP_WORDS and len(w) > 2]
         
         if not filtered_words:
             return []
         
-        # Calculate term frequency
         word_counts = Counter(filtered_words)
         total_words = len(filtered_words)
         
-        # Calculate TF-IDF (simplified - document frequency is 1 since single doc)
-        # Use inverse word frequency as proxy: penalize very common words
         max_count = max(word_counts.values())
         
         tfidf_scores = {}
         for word, count in word_counts.items():
             tf = count / total_words
-            # IDF approximation: give higher scores to moderately frequent terms
             idf = math.log(max_count / count + 1)
             tfidf_scores[word] = tf * idf
         
-        # Sort by score
         sorted_keywords = sorted(tfidf_scores.items(), key=lambda x: x[1], reverse=True)
         
         results = []
@@ -277,7 +245,6 @@ class TextAnalyzer:
         keyword_lower = keyword.lower()
         text_lower = self.clean_text.lower()
         
-        # Check position in text
         first_pos = text_lower.find(keyword_lower)
         if first_pos == -1:
             return 'low'
@@ -285,7 +252,6 @@ class TextAnalyzer:
         text_length = len(text_lower)
         position_ratio = first_pos / max(text_length, 1)
         
-        # Check if in title or early content
         in_title = keyword_lower in self.title.lower() if self.title else False
         in_first_paragraph = position_ratio < 0.1
         
@@ -320,7 +286,6 @@ class TextAnalyzer:
         
         return results
     
-    # ==================== Readability Analysis ====================
     
     def analyze_readability(self) -> Dict:
         """
@@ -383,21 +348,18 @@ class TextAnalyzer:
         total_syllables = sum(self._count_syllables(w) for w in self.words)
         complex_words = sum(1 for w in self.words if self._is_complex_word(w))
         
-        # Flesch Reading Ease: 206.835 - 1.015(words/sentences) - 84.6(syllables/words)
         if total_sentences > 0 and total_words > 0:
             flesch = 206.835 - 1.015 * (total_words / total_sentences) - 84.6 * (total_syllables / total_words)
             flesch = max(0, min(100, flesch))
         else:
             flesch = 50
         
-        # Flesch-Kincaid Grade: 0.39(words/sentences) + 11.8(syllables/words) - 15.59
         if total_sentences > 0 and total_words > 0:
             fk_grade = 0.39 * (total_words / total_sentences) + 11.8 * (total_syllables / total_words) - 15.59
             fk_grade = max(0, min(18, fk_grade))
         else:
             fk_grade = 8
         
-        # Gunning Fog: 0.4 * ((words/sentences) + 100 * (complex_words/words))
         if total_sentences > 0 and total_words > 0:
             fog = 0.4 * ((total_words / total_sentences) + 100 * (complex_words / total_words))
             fog = max(0, min(20, fog))
@@ -492,7 +454,6 @@ class TextAnalyzer:
     
     def _calculate_reading_time(self) -> Dict:
         """Calculate estimated reading time."""
-        # Average reading speed: 200-250 words per minute
         words = len(self.words)
         minutes = words / 225
         
@@ -502,17 +463,14 @@ class TextAnalyzer:
             'formatted': f"{int(minutes)} min {int((minutes % 1) * 60)} sec" if minutes >= 1 else f"{int(minutes * 60)} sec"
         }
     
-    # ==================== Content Quality Metrics ====================
     
     def analyze_content_quality(self) -> Dict:
         """Analyze overall content quality."""
         word_count = len(self.words)
         unique_words = len(set(self.words))
         
-        # Vocabulary richness (Type-Token Ratio)
         ttr = unique_words / max(word_count, 1)
         
-        # Content depth assessment
         if word_count < 300:
             depth = 'thin'
             depth_score = 30

@@ -10,7 +10,6 @@ from urllib.parse import urlparse, urljoin
 from collections import Counter
 import json
 
-# Import text analyzer for advanced NLP
 try:
     from .text_analyzer import TextAnalyzer
     HAS_TEXT_ANALYZER = True
@@ -21,7 +20,6 @@ except ImportError:
     except ImportError:
         HAS_TEXT_ANALYZER = False
 
-# Import security headers analyzer
 try:
     from .security_headers import get_security_quick_check
     HAS_SECURITY_ANALYZER = True
@@ -32,7 +30,6 @@ except ImportError:
     except ImportError:
         HAS_SECURITY_ANALYZER = False
 
-# Import PageSpeed Insights for real Core Web Vitals
 try:
     from .pagespeed_insights import get_core_web_vitals, format_cwv_for_frontend
     HAS_PAGESPEED = True
@@ -61,41 +58,31 @@ class ComprehensiveMetricsExtractor:
     def extract_all(self) -> dict:
         """Extract all metrics in the comprehensive structure"""
         return {
-            # Meta info
             'url': self.url,
             'domain': self.domain,
             'scanDate': None,  # Will be set by caller
             'scanDuration': self.load_time_ms,
             'pagesScanned': 1,
             
-            # Scores - calculated based on metrics
             'categoryScores': self._calculate_category_scores(),
             
-            # Core Web Vitals (estimates from page analysis)
             'coreWebVitals': self._extract_core_web_vitals(),
             
-            # Performance
             'performance': self._extract_performance_metrics(),
             
-            # Technical SEO
             'technical': self._extract_technical_seo(),
             
-            # On-Page SEO
             'onPage': self._extract_on_page_seo(),
             
-            # Content Intelligence
             'contentIntelligence': self._extract_content_intelligence(),
             
-            # User Experience
             'userExperience': self._extract_user_experience(),
             
-            # Social SEO
             'social': self._extract_social_seo(),
         }
     
     def _calculate_category_scores(self) -> dict:
         """Calculate category scores based on various factors"""
-        # Technical score based on HTTPS, viewport, canonical, etc.
         technical_factors = [
             self._is_https() * 15,
             self._has_viewport() * 15,
@@ -107,13 +94,11 @@ class ComprehensiveMetricsExtractor:
         ]
         technical = min(100, sum(technical_factors))
         
-        # On-page score
         title_score = self._score_title()
         meta_score = self._score_meta_description()
         heading_score = self._score_headings()
         on_page = int((title_score + meta_score + heading_score) / 3)
         
-        # Content score
         word_count = self._get_word_count()
         content_factors = [
             min(word_count / 1500 * 40, 40),  # Word count up to 40 points
@@ -122,7 +107,6 @@ class ComprehensiveMetricsExtractor:
         ]
         content = min(100, sum(content_factors))
         
-        # UX score
         ux_factors = [
             self._has_viewport() * 25,
             (1 - min(self._count_images_without_alt() / 10, 1)) * 25,
@@ -131,7 +115,6 @@ class ComprehensiveMetricsExtractor:
         ]
         user_experience = min(100, sum(ux_factors))
         
-        # Performance score
         perf_factors = [
             max(0, 100 - self.load_time_ms / 50),  # Load time penalty
             max(0, 100 - self.page_size_bytes / 30000),  # Size penalty
@@ -139,7 +122,6 @@ class ComprehensiveMetricsExtractor:
         ]
         performance = min(100, sum(perf_factors) / 3)
         
-        # Social score
         social_factors = [
             self._has_og_tags() * 40,
             self._has_twitter_cards() * 30,
@@ -147,7 +129,6 @@ class ComprehensiveMetricsExtractor:
         ]
         social = min(100, sum(social_factors))
         
-        # Security score
         security_factors = [
             self._is_https() * 50,
             self._has_csp_header() * 20,
@@ -169,17 +150,14 @@ class ComprehensiveMetricsExtractor:
     def _extract_core_web_vitals(self) -> dict:
         """Extract/estimate Core Web Vitals - uses real PageSpeed data when available"""
         
-        # Try to get real Core Web Vitals from PageSpeed Insights
         if HAS_PAGESPEED:
             try:
                 pagespeed_result = get_core_web_vitals(self.url, strategy='mobile')
                 if pagespeed_result.get('success', False):
                     cwv = format_cwv_for_frontend(pagespeed_result)
-                    # Add source information
                     cwv['_source'] = 'pagespeed_insights'
                     cwv['_performanceScore'] = pagespeed_result.get('performanceScore', 0)
                     
-                    # Check if field data is available
                     if pagespeed_result.get('fieldData'):
                         cwv['_hasFieldData'] = True
                         cwv['_fieldDataSource'] = 'Chrome User Experience Report'
@@ -188,14 +166,11 @@ class ComprehensiveMetricsExtractor:
                     
                     return cwv
             except Exception:
-                # Fall through to estimated values
                 pass
         
-        # Fallback to estimates based on page structure
         largest_image = self._get_largest_image()
         estimated_lcp = (self.load_time_ms / 1000) * 1.5 if self.load_time_ms else 2.5
         
-        # Estimate CLS based on images without dimensions
         images_without_dims = len([img for img in self.soup.find_all('img') 
                                    if not img.get('width') or not img.get('height')])
         estimated_cls = min(0.25, images_without_dims * 0.03)
@@ -247,7 +222,6 @@ class ComprehensiveMetricsExtractor:
         stylesheets = self.soup.find_all('link', rel='stylesheet')
         images = self.soup.find_all('img')
         
-        # Estimate sizes (would need actual requests for real data)
         html_size = len(self.html.encode('utf-8'))
         
         return {
@@ -507,7 +481,6 @@ class ComprehensiveMetricsExtractor:
             },
         }
     
-    # ==================== Helper Methods ====================
     
     def _get_title(self):
         tag = self.soup.find('title')
@@ -548,11 +521,9 @@ class ComprehensiveMetricsExtractor:
         return tag.get('content', 'summary') if tag else 'summary'
     
     def _has_sitemap_link(self):
-        # Check for sitemap link in HTML
         return bool(self.soup.find('a', href=re.compile(r'sitemap', re.I)))
     
     def _has_structured_data(self):
-        # Check for JSON-LD or microdata
         json_ld = self.soup.find('script', attrs={'type': 'application/ld+json'})
         microdata = self.soup.find(attrs={'itemscope': True})
         return bool(json_ld or microdata)
@@ -573,7 +544,6 @@ class ComprehensiveMetricsExtractor:
         return types if types else ['WebPage']
     
     def _count_render_blocking(self):
-        # Count CSS in head without media="print" and sync JS in head
         blocking_css = len([link for link in self.soup.find_all('link', rel='stylesheet') 
                           if not link.get('media') == 'print'])
         blocking_js = len([script for script in self.soup.find_all('script', src=True)
@@ -585,7 +555,6 @@ class ComprehensiveMetricsExtractor:
         return len(text.split())
     
     def _get_visible_text(self):
-        # Remove script and style elements
         for element in self.soup(['script', 'style', 'noscript']):
             element.decompose()
         text = self.soup.get_text(separator=' ', strip=True)
@@ -649,7 +618,6 @@ class ComprehensiveMetricsExtractor:
         word_count = len(words)
         sentence_count = len([s for s in sentences if s.strip()])
         
-        # Use advanced text analyzer if available
         if HAS_TEXT_ANALYZER:
             try:
                 analyzer = TextAnalyzer(
@@ -685,7 +653,6 @@ class ComprehensiveMetricsExtractor:
             except Exception:
                 pass
         
-        # Fallback to basic metrics
         return {
             'wordCount': word_count,
             'paragraphCount': len(paragraphs),
@@ -705,7 +672,6 @@ class ComprehensiveMetricsExtractor:
         title = self._get_title() or ''
         meta_desc = self._get_meta_description() or ''
         
-        # Use advanced TF-IDF if available
         if HAS_TEXT_ANALYZER:
             try:
                 analyzer = TextAnalyzer(text, title, meta_desc)
@@ -748,12 +714,10 @@ class ComprehensiveMetricsExtractor:
             except Exception:
                 pass
         
-        # Fallback to basic keyword extraction
         text_lower = text.lower()
         words = text_lower.split()
         word_freq = Counter(words)
         
-        # Get most common words (excluding stop words)
         stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
                      'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
                      'should', 'may', 'might', 'must', 'shall', 'can', 'to', 'of', 'in',
@@ -819,7 +783,6 @@ class ComprehensiveMetricsExtractor:
             if href.startswith('#') or href.startswith('javascript:'):
                 continue
             
-            # Check if internal or external
             if href.startswith('/') or self.domain in href:
                 internal.append(link)
             elif href.startswith('http'):
@@ -869,10 +832,8 @@ class ComprehensiveMetricsExtractor:
     
     def _is_url_readable(self):
         path = self.parsed_url.path
-        # Check for underscores, excessive numbers, or random strings
         return not bool(re.search(r'[_]{2,}|[0-9]{8,}|[a-f0-9]{32}', path))
     
-    # Scoring helpers
     def _score_title(self):
         title = self._get_title()
         if not title:
@@ -913,7 +874,6 @@ class ComprehensiveMetricsExtractor:
         return 70  # Placeholder
     
     def _calculate_readability(self, text):
-        # Simplified Flesch Reading Ease
         words = text.split()
         sentences = re.split(r'[.!?]+', text)
         syllables = sum(self._count_syllables(w) for w in words)
@@ -1008,12 +968,10 @@ class ComprehensiveMetricsExtractor:
         return False
     
     def _has_dynamic_content(self):
-        # Check for common SPA frameworks
         return bool(self.soup.find(id='app') or self.soup.find(id='root') or 
                    self.soup.find(attrs={'ng-app': True}) or self.soup.find(attrs={'data-reactroot': True}))
     
     def _check_touch_targets(self):
-        # Would need actual CSS analysis
         return True
     
     def _count_small_touch_targets(self):
@@ -1037,7 +995,6 @@ class ComprehensiveMetricsExtractor:
     
     def _extract_security_info(self) -> dict:
         """Extract security information including real HTTP headers when possible."""
-        # Base security info from HTML analysis
         base_security = {
             'https': self._is_https(),
             'hsts': False,
@@ -1063,7 +1020,6 @@ class ComprehensiveMetricsExtractor:
             },
         }
         
-        # Try to get real security headers
         if HAS_SECURITY_ANALYZER:
             try:
                 security_check = get_security_quick_check(self.url, timeout=5.0)
@@ -1073,7 +1029,6 @@ class ComprehensiveMetricsExtractor:
                 base_security['securityGrade'] = security_check.get('grade', 'F')
                 base_security['hsts'] = security_check.get('headers', {}).get('strictTransportSecurity', False)
                 
-                # Add top security issues
                 base_security['topSecurityIssues'] = security_check.get('topIssues', [])
                 base_security['securitySummary'] = {
                     'passed': security_check.get('passed', 0),
@@ -1081,11 +1036,9 @@ class ComprehensiveMetricsExtractor:
                     'warnings': security_check.get('warnings', 0),
                 }
             except Exception:
-                # Fallback to basic security check based on HTTPS only
                 base_security['securityScore'] = 50 if self._is_https() else 10
                 base_security['securityGrade'] = 'D' if self._is_https() else 'F'
         else:
-            # Basic scoring without header analysis
             base_security['securityScore'] = 50 if self._is_https() else 10
             base_security['securityGrade'] = 'D' if self._is_https() else 'F'
         
@@ -1126,7 +1079,6 @@ class ComprehensiveMetricsExtractor:
             for h in self.soup.find_all(f'h{i}'):
                 headings.append(i)
         
-        # Check for skipped levels
         for i in range(len(headings) - 1):
             if headings[i+1] - headings[i] > 1:
                 return False
@@ -1166,7 +1118,6 @@ class ComprehensiveMetricsExtractor:
         return h2s if h2s else ['Unknown']
     
     def _extract_entities(self):
-        # Simplified entity extraction
         return [
             {'name': self.domain, 'type': 'Organization', 'relevance': 0.9}
         ]
@@ -1205,11 +1156,9 @@ class ComprehensiveMetricsExtractor:
         return signals if signals else ['Limited trust signals']
     
     def _is_voice_search_optimized(self):
-        # Check for question-style headings
         return bool(self.soup.find(['h1', 'h2', 'h3'], text=re.compile(r'^(what|how|why|when|where|who)', re.I)))
     
     def _featured_snippet_potential(self):
-        # Check for list structures, tables, definitions
         has_lists = bool(self.soup.find(['ul', 'ol']))
         has_tables = bool(self.soup.find('table'))
         has_definitions = bool(self.soup.find('dl'))
@@ -1257,7 +1206,6 @@ class ComprehensiveMetricsExtractor:
     def _calculate_accessibility_score(self):
         score = 50
         
-        # Alt text
         images = self.soup.find_all('img')
         if images:
             with_alt = len([img for img in images if img.get('alt')])
@@ -1265,7 +1213,6 @@ class ComprehensiveMetricsExtractor:
         else:
             score += 20
         
-        # Form labels
         inputs = self.soup.find_all('input')
         labels = self.soup.find_all('label')
         if inputs:
@@ -1273,11 +1220,9 @@ class ComprehensiveMetricsExtractor:
         else:
             score += 15
         
-        # ARIA
         if self.soup.find(attrs={'role': True}):
             score += 10
         
-        # Lang attribute
         if self._has_lang_attribute():
             score += 5
         
@@ -1328,7 +1273,6 @@ class ComprehensiveMetricsExtractor:
         return len([b for b in buttons if cta_patterns.search(b.get_text())])
     
     def _has_popups(self):
-        # Check for common popup indicators
         return bool(self.soup.find(attrs={'class': re.compile(r'popup|modal|overlay', re.I)}))
     
     def _get_social_links(self):
@@ -1348,7 +1292,6 @@ class ComprehensiveMetricsExtractor:
         return bool(self.soup.find(attrs={'class': re.compile(r'share|social', re.I)}))
     
     def _has_csp_header(self):
-        # Would need actual HTTP response headers
         return False
     
     def _has_xframe_options(self):

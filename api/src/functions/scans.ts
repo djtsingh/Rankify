@@ -1,24 +1,11 @@
-/**
- * Scan Functions - Azure Queue-based Architecture
- * 
- * Flow:
- * 1. POST /api/v1/scans → Creates scan in DB, puts job in Queue
- * 2. Python Worker picks up from Queue, processes, saves results
- * 3. GET /api/v1/scans/{id} → Returns scan status/results from DB
- */
-
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { prisma } from "../lib/prisma";
 import { QueueServiceClient } from "@azure/storage-queue";
 import { randomUUID } from "crypto";
 
-// Azure Storage Queue connection - MUST be set in production
 const STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.AzureWebJobsStorage || '';
 const QUEUE_NAME = 'scan-jobs';
 
-/**
- * Get Queue Client
- */
 function getQueueClient() {
     if (!STORAGE_CONNECTION_STRING) {
         throw new Error('AZURE_STORAGE_CONNECTION_STRING is not configured');
@@ -27,14 +14,9 @@ function getQueueClient() {
     return queueServiceClient.getQueueClient(QUEUE_NAME);
 }
 
-/**
- * Create a new scan - POST /api/v1/scans
- * Creates scan record in DB and queues job for Python worker
- */
 export async function createScan(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Create scan request received');
 
-    // Handle CORS preflight
     if (request.method === 'OPTIONS') {
         return {
             status: 204,
@@ -47,7 +29,6 @@ export async function createScan(request: HttpRequest, context: InvocationContex
     }
 
     try {
-        // Parse request body
         const body = await request.json() as { url?: string };
         const url = body.url;
 
@@ -59,12 +40,10 @@ export async function createScan(request: HttpRequest, context: InvocationContex
             };
         }
 
-        // Validate URL
         let normalizedUrl: string;
         try {
-            // Add https if no protocol
             normalizedUrl = url.match(/^https?:\/\//) ? url : `https://${url}`;
-            new URL(normalizedUrl); // Validate
+            new URL(normalizedUrl);
         } catch {
             return {
                 status: 400,
@@ -73,20 +52,16 @@ export async function createScan(request: HttpRequest, context: InvocationContex
             };
         }
 
-        // Generate scan ID
         const scanId = randomUUID();
-        
-        // Create scan record in database (using raw query for scans table)
         const urlHash = Buffer.from(normalizedUrl).toString('base64').substring(0, 64);
-        
+
         await prisma.$executeRaw`
             INSERT INTO scans (id, url, url_hash, status, created_at, updated_at)
             VALUES (${scanId}::uuid, ${normalizedUrl}, ${urlHash}, 'pending', NOW(), NOW())
         `;
-        
+
         context.log(`Scan created in DB: ${scanId}`);
 
-        // Queue the job for Python worker
         try {
             const queueClient = getQueueClient();
             const message = {
@@ -94,15 +69,13 @@ export async function createScan(request: HttpRequest, context: InvocationContex
                 url: normalizedUrl,
                 createdAt: new Date().toISOString()
             };
-            
-            // Base64 encode the message (required by Azure Queue)
+
             const encodedMessage = Buffer.from(JSON.stringify(message)).toString('base64');
             await queueClient.sendMessage(encodedMessage);
-            
+
             context.log(`Job queued for scan: ${scanId}`);
         } catch (queueError) {
             context.error('Failed to queue job:', queueError);
-            // Update scan status to failed
             await prisma.$executeRaw`UPDATE scans SET status = 'failed', error_message = 'Failed to queue job', updated_at = NOW() WHERE id = ${scanId}::uuid`;
             throw queueError;
         }
@@ -121,7 +94,7 @@ export async function createScan(request: HttpRequest, context: InvocationContex
 
     } catch (error) {
         context.error('Error creating scan:', error);
-        
+
         return {
             status: 500,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -133,15 +106,10 @@ export async function createScan(request: HttpRequest, context: InvocationContex
     }
 }
 
-/**
- * Get scan by ID - GET /api/v1/scans/{id}
- * Returns scan status and results from database
- */
 export async function getScan(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     const scanId = request.params.id;
     context.log('Get scan request received for ID:', scanId);
 
-    // Handle CORS preflight
     if (request.method === 'OPTIONS') {
         return {
             status: 204,
@@ -153,7 +121,6 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
         };
     }
 
-    // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!scanId || !uuidRegex.test(scanId)) {
         return {
@@ -164,9 +131,8 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
     }
 
     try {
-        // Get scan from database with results
         const scanResult = await prisma.$queryRaw<any[]>`
-            SELECT 
+            SELECT
                 s.id as scan_id,
                 s.url,
                 s.status,
@@ -191,11 +157,10 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
 
         const scan = scanResult[0];
 
-        // Get issues if scan is completed
         let issues: any[] = [];
         if (scan.status === 'completed') {
             issues = await prisma.$queryRaw<any[]>`
-                SELECT 
+                SELECT
                     id,
                     type,
                     category,
@@ -214,11 +179,9 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
             `;
         }
 
-        // Calculate grade from score
         const score = scan.score || 0;
         const grade = score >= 90 ? 'A' : score >= 80 ? 'B+' : score >= 70 ? 'B' : score >= 60 ? 'C+' : 'C';
 
-        // Build response that matches frontend expectations
         const response: any = {
             data: {
                 id: scan.scan_id,
@@ -229,7 +192,6 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
                 createdAt: scan.created_at,
                 completedAt: scan.completed_at,
                 errorMessage: scan.error_message,
-                // Include full results in the format frontend expects
                 results: scan.metrics ? {
                     ...scan.metrics,
                     categoryScores: scan.category_scores
@@ -252,7 +214,7 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
 
     } catch (error) {
         context.error('Error fetching scan:', error);
-        
+
         return {
             status: 500,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -264,7 +226,6 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
     }
 }
 
-// Register routes
 app.http('createScan', {
     methods: ['POST', 'OPTIONS'],
     authLevel: 'anonymous',

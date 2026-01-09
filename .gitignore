@@ -47,6 +47,9 @@ docs/troubleshooting/
 # Playground - experimental workspace
 playground/
 
+# Backups - versioned snapshots
+backups/
+
 # Misc development notes
 misc/
 

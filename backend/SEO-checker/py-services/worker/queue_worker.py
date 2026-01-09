@@ -20,18 +20,15 @@ from psycopg2.extras import RealDictCursor
 from azure.storage.queue import QueueClient, QueueMessage
 from azure.core.exceptions import ResourceNotFoundError
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from extractor.comprehensive_extractor import ComprehensiveMetricsExtractor
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('seo-worker')
 
-# Reduce noise from Azure SDK
 logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
 logging.getLogger('azure').setLevel(logging.WARNING)
 
@@ -39,19 +36,15 @@ logging.getLogger('azure').setLevel(logging.WARNING)
 class Config:
     """Configuration from environment variables"""
     
-    # Azure Storage Queue
     STORAGE_CONNECTION_STRING = os.environ.get('AZURE_STORAGE_CONNECTION_STRING', '')
     QUEUE_NAME = os.environ.get('QUEUE_NAME', 'scan-jobs')
     
-    # Database
     DATABASE_URL = os.environ.get('DATABASE_URL', '')
     
-    # Worker settings
     POLL_INTERVAL = int(os.environ.get('POLL_INTERVAL', '5'))  # seconds
     VISIBILITY_TIMEOUT = int(os.environ.get('VISIBILITY_TIMEOUT', '300'))  # 5 minutes
     MAX_RETRIES = int(os.environ.get('MAX_RETRIES', '3'))
     
-    # HTTP settings
     REQUEST_TIMEOUT = int(os.environ.get('REQUEST_TIMEOUT', '30'))
     USER_AGENT = os.environ.get(
         'USER_AGENT', 
@@ -78,7 +71,6 @@ class DatabaseClient:
         """Establish database connection"""
         if self._conn is None or self._conn.closed:
             self._conn = psycopg2.connect(self.connection_string)
-        # Reset connection if it's in a failed transaction state
         if self._conn.status == psycopg2.extensions.TRANSACTION_STATUS_INERROR:
             self._conn.rollback()
         return self._conn
@@ -110,11 +102,9 @@ class DatabaseClient:
         """Update scan with results"""
         conn = self.connect()
         with conn.cursor() as cur:
-            # Calculate overall score from category scores
             category_scores = results.get('categoryScores', {})
             overall_score = int(sum(category_scores.values()) / max(len(category_scores), 1))
             
-            # Update scan status
             cur.execute('''
                 UPDATE scans 
                 SET status = %s,
@@ -123,7 +113,6 @@ class DatabaseClient:
                 WHERE id = %s::uuid
             ''', (status, scan_id))
             
-            # Insert or update scan results
             cur.execute('''
                 INSERT INTO scan_results (id, scan_id, score, metrics, category_scores, created_at)
                 VALUES (gen_random_uuid(), %s::uuid, %s, %s, %s, NOW())
@@ -133,7 +122,6 @@ class DatabaseClient:
                     category_scores = EXCLUDED.category_scores
             ''', (scan_id, overall_score, json.dumps(results), json.dumps(category_scores)))
             
-            # Insert issues from recommendations
             recommendations = results.get('recommendations', {})
             self._insert_issues(cur, scan_id, recommendations)
             
@@ -144,7 +132,6 @@ class DatabaseClient:
         """Insert issues from recommendations"""
         priority = 1
         
-        # Priority fixes (high priority)
         for fix in recommendations.get('priorityFixes', []):
             cursor.execute('''
                 INSERT INTO issues (id, scan_id, type, category, severity, title, description, recommendation, impact_score, priority, created_at)
@@ -162,7 +149,6 @@ class DatabaseClient:
             ))
             priority += 1
         
-        # Quick wins (medium priority)
         for win in recommendations.get('quickWins', []):
             cursor.execute('''
                 INSERT INTO issues (id, scan_id, type, category, severity, title, description, recommendation, impact_score, priority, created_at)
@@ -180,7 +166,6 @@ class DatabaseClient:
             ))
             priority += 1
         
-        # Long term (lower priority)
         for item in recommendations.get('longTerm', []):
             cursor.execute('''
                 INSERT INTO issues (id, scan_id, type, category, severity, title, description, recommendation, impact_score, priority, created_at)
@@ -253,15 +238,12 @@ class SEOScanner:
         """
         logger.info(f"Scanning URL: {url}")
         
-        # Ensure URL has protocol
         if not url.startswith(('http://', 'https://')):
             url = f'https://{url}'
         
-        # Fetch the page
         html, load_time_ms, size_bytes = await self.fetch_page(url)
         logger.info(f"Fetched {url} in {load_time_ms}ms ({size_bytes} bytes)")
         
-        # Extract comprehensive metrics
         extractor = ComprehensiveMetricsExtractor(
             html=html,
             url=url,
@@ -272,11 +254,9 @@ class SEOScanner:
         results = extractor.extract_all()
         results['scanDate'] = datetime.now(timezone.utc).isoformat()
         
-        # Calculate overall score
         category_scores = results.get('categoryScores', {})
         results['overallScore'] = int(sum(category_scores.values()) / max(len(category_scores), 1))
         
-        # Add recommendations based on metrics
         results['recommendations'] = self._generate_recommendations(results)
         
         logger.info(f"Scan complete for {url}. Overall score: {results['overallScore']}")
@@ -289,7 +269,6 @@ class SEOScanner:
         priority_fixes = []
         long_term = []
         
-        # Check title
         on_page = results.get('onPage', {})
         title_info = on_page.get('title', {})
         if not title_info.get('exists'):
@@ -307,7 +286,6 @@ class SEOScanner:
                 'effort': 'low'
             })
         
-        # Check meta description
         meta_info = on_page.get('metaDescription', {})
         if not meta_info.get('exists'):
             priority_fixes.append({
@@ -324,7 +302,6 @@ class SEOScanner:
                 'effort': 'low'
             })
         
-        # Check H1
         headings = on_page.get('headings', {})
         h1_info = headings.get('h1', {})
         if h1_info.get('count', 0) == 0:
@@ -342,7 +319,6 @@ class SEOScanner:
                 'effort': 'low'
             })
         
-        # Check images
         images = on_page.get('images', {})
         if images.get('withoutAlt', 0) > 0:
             priority_fixes.append({
@@ -352,7 +328,6 @@ class SEOScanner:
                 'effort': 'medium'
             })
         
-        # Check HTTPS
         technical = results.get('technical', {})
         security = technical.get('security', {})
         if not security.get('https'):
@@ -363,7 +338,6 @@ class SEOScanner:
                 'effort': 'medium'
             })
         
-        # Check mobile
         mobile = technical.get('mobile', {})
         if not mobile.get('viewportConfigured'):
             priority_fixes.append({
@@ -373,7 +347,6 @@ class SEOScanner:
                 'effort': 'low'
             })
         
-        # Check structured data
         sd = technical.get('structuredData', {})
         if not sd.get('present'):
             long_term.append({
@@ -383,7 +356,6 @@ class SEOScanner:
                 'effort': 'medium'
             })
         
-        # Check Open Graph
         social = results.get('social', {})
         og = social.get('openGraph', {})
         if not og.get('present'):
@@ -394,7 +366,6 @@ class SEOScanner:
                 'effort': 'low'
             })
         
-        # Check content length
         content = on_page.get('content', {})
         word_count = content.get('wordCount', 0)
         if word_count < 300:
@@ -405,7 +376,6 @@ class SEOScanner:
                 'effort': 'high'
             })
         
-        # Check performance
         performance = results.get('performance', {})
         load_time = performance.get('pageLoadTime', 0)
         if load_time > 3000:
@@ -441,15 +411,12 @@ class QueueWorker:
     def decode_message(self, message: QueueMessage) -> dict:
         """Decode a queue message (handles base64 encoding)"""
         try:
-            # Azure Storage Queue SDK v12 returns messages as strings
             content = message.content
             
-            # Try to decode as base64 (common pattern)
             try:
                 decoded = base64.b64decode(content).decode('utf-8')
                 return json.loads(decoded)
             except:
-                # If not base64, try direct JSON parse
                 return json.loads(content)
         except Exception as e:
             logger.error(f"Failed to decode message: {e}")
@@ -462,7 +429,6 @@ class QueueWorker:
         logger.info(f"Processing message: {message_id}")
         
         try:
-            # Decode the message
             job = self.decode_message(message)
             print(f"JOB DECODED: {job}", flush=True)
             scan_id = job.get('scanId')
@@ -471,23 +437,18 @@ class QueueWorker:
             if not scan_id or not url:
                 print(f"INVALID JOB: {job}", flush=True)
                 logger.error(f"Invalid job message: {job}")
-                # Delete invalid message
                 self.queue_client.delete_message(message)
                 return
             
             print(f"SCANNING: scan_id={scan_id}, url={url}", flush=True)
             logger.info(f"Processing scan {scan_id} for URL: {url}")
             
-            # Update status to processing
             self.db.update_scan_status(scan_id, 'processing')
             
-            # Perform the scan
             results = await self.scanner.scan(url)
             
-            # Update database with results
             self.db.update_scan_results(scan_id, results)
             
-            # Delete the message from queue (successful processing)
             self.queue_client.delete_message(message)
             logger.info(f"Successfully processed scan {scan_id}")
             
@@ -500,7 +461,6 @@ class QueueWorker:
             if scan_id:
                 self.db.update_scan_error(scan_id, error_msg)
             
-            # Delete message - don't retry HTTP errors
             self.queue_client.delete_message(message)
             
         except httpx.RequestError as e:
@@ -510,10 +470,8 @@ class QueueWorker:
             job = self.decode_message(message)
             scan_id = job.get('scanId')
             
-            # Check retry count
             if message.dequeue_count < Config.MAX_RETRIES:
                 logger.info(f"Will retry message {message_id} (attempt {message.dequeue_count})")
-                # Don't delete - let it become visible again
             else:
                 logger.error(f"Max retries reached for message {message_id}")
                 if scan_id:
@@ -533,7 +491,6 @@ class QueueWorker:
             except:
                 pass
             
-            # Delete to prevent infinite loops
             try:
                 self.queue_client.delete_message(message)
             except:
@@ -554,7 +511,6 @@ class QueueWorker:
         
         while self.running:
             try:
-                # Receive messages from queue
                 messages = self.queue_client.receive_messages(
                     visibility_timeout=Config.VISIBILITY_TIMEOUT,
                     max_messages=1  # Process one at a time for simplicity
@@ -566,7 +522,6 @@ class QueueWorker:
                     for message in message_list:
                         await self.process_message(message)
                 
-                # If no messages, wait before polling again
                 await asyncio.sleep(Config.POLL_INTERVAL)
                 
             except ResourceNotFoundError:

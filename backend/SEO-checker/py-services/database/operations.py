@@ -1,4 +1,3 @@
-# python-services/database/operations.py
 
 from database.connection import get_cursor
 from psycopg2.extras import Json
@@ -6,9 +5,6 @@ import uuid
 from datetime import datetime
 import hashlib
 
-# ============================================
-# SCAN OPERATIONS
-# ============================================
 
 def create_scan(url, user_id=None):
     """
@@ -73,9 +69,6 @@ def get_scan(scan_id):
         
         return cur.fetchone()
 
-# ============================================
-# SCAN RESULTS OPERATIONS
-# ============================================
 
 def save_scan_result(scan_id, score, metrics):
     """
@@ -115,9 +108,6 @@ def get_scan_result(scan_id):
         
         return cur.fetchone()
 
-# ============================================
-# ISSUES OPERATIONS
-# ============================================
 
 def save_issues(scan_id, issues_list):
     """
@@ -193,9 +183,6 @@ def get_issues(scan_id):
         
         return cur.fetchall()
 
-# ============================================
-# COMPLETE SCAN SAVE
-# ============================================
 
 def save_complete_scan_result(scan_id, score, metrics, issues_list):
     """
@@ -211,13 +198,10 @@ def save_complete_scan_result(scan_id, score, metrics, issues_list):
         dict: Summary of what was saved
     """
     try:
-        # Save result
         result_id = save_scan_result(scan_id, score, metrics)
         
-        # Save issues
         issues_count = save_issues(scan_id, issues_list)
         
-        # Update scan status
         update_scan_status(scan_id, 'completed')
         
         return {
@@ -227,13 +211,9 @@ def save_complete_scan_result(scan_id, score, metrics, issues_list):
         }
     
     except Exception as e:
-        # Mark scan as failed
         update_scan_status(scan_id, 'failed', str(e))
         raise e
 
-# ============================================
-# RETRIEVAL OPERATIONS
-# ============================================
 
 def get_complete_scan_data(scan_id):
     """
@@ -242,12 +222,10 @@ def get_complete_scan_data(scan_id):
     Returns:
         dict: Complete scan data
     """
-    # Get scan
     scan = get_scan(scan_id)
     if not scan:
         return None
     
-    # Get result (if completed)
     result = None
     issues = []
     
@@ -267,9 +245,6 @@ def get_complete_scan_data(scan_id):
         'issues': issues
     }
 
-# ============================================
-# TESTING FUNCTIONS
-# ============================================
 
 def test_database_operations():
     """
@@ -278,17 +253,14 @@ def test_database_operations():
     print("🧪 Testing database operations...")
     
     try:
-        # Test 1: Create scan
         print("\n1️⃣ Creating scan...")
         scan_id = create_scan("https://example.com")
         print(f"✅ Scan created: {scan_id}")
         
-        # Test 2: Update status
         print("\n2️⃣ Updating scan status...")
         update_scan_status(scan_id, 'processing')
         print(f"✅ Status updated to 'processing'")
         
-        # Test 3: Save result
         print("\n3️⃣ Saving scan result...")
         metrics = {
             'title': 'Example Domain',
@@ -300,7 +272,6 @@ def test_database_operations():
         result_id = save_scan_result(scan_id, 75, metrics)
         print(f"✅ Result saved: {result_id}")
         
-        # Test 4: Save issues
         print("\n4️⃣ Saving issues...")
         issues = [
             {
@@ -329,12 +300,10 @@ def test_database_operations():
         issues_count = save_issues(scan_id, issues)
         print(f"✅ {issues_count} issues saved")
         
-        # Test 5: Update to completed
         print("\n5️⃣ Marking scan as completed...")
         update_scan_status(scan_id, 'completed')
         print(f"✅ Scan marked as completed")
         
-        # Test 6: Retrieve complete data
         print("\n6️⃣ Retrieving complete scan data...")
         complete_data = get_complete_scan_data(scan_id)
         print(f"✅ Retrieved complete data:")

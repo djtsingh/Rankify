@@ -1,4 +1,3 @@
-# py-services/analyzer/issue_detector.py
 
 """
 Real Issue Detector
@@ -27,7 +26,6 @@ class IssueDetector:
         Returns:
             list: List of detected issues
         """
-        # Run all checks
         self._check_title()
         self._check_meta_description()
         self._check_h1_tags()
@@ -65,13 +63,10 @@ class IssueDetector:
             time_to_fix_hours (int): Estimated time to fix
             data (dict): Additional data
         """
-        # Scale impact_score from 0-1 to 0-10 for frontend compatibility
         scaled_impact = round(impact_score * 10, 1)
         
-        # Increment issue counter for unique ID
         self._issue_counter += 1
         
-        # Calculate priority based on severity and impact
         priority_map = {'critical': 1, 'warning': 2, 'info': 3}
         base_priority = priority_map.get(severity, 3)
         priority = base_priority + (1 - impact_score)  # Lower number = higher priority
@@ -91,16 +86,12 @@ class IssueDetector:
             'data': data or {}
         })
     
-    # ============================================
-    # TITLE TAG CHECKS
-    # ============================================
     
     def _check_title(self):
         """Check title tag issues"""
         title = self.metrics.get('title')
         title_length = self.metrics.get('title_length', 0)
         
-        # Missing title
         if not title:
             self._add_issue(
                 issue_type='title_tag',
@@ -115,7 +106,6 @@ class IssueDetector:
             )
             return
         
-        # Title too short
         if title_length < 30:
             self._add_issue(
                 issue_type='title_tag',
@@ -129,7 +119,6 @@ class IssueDetector:
                 data={'current_length': title_length, 'recommended_length': '30-60', 'current_title': title}
             )
         
-        # Title too long
         elif title_length > 60:
             self._add_issue(
                 issue_type='title_tag',
@@ -143,16 +132,12 @@ class IssueDetector:
                 data={'current_length': title_length, 'recommended_length': '30-60', 'current_title': title}
             )
     
-    # ============================================
-    # META DESCRIPTION CHECKS
-    # ============================================
     
     def _check_meta_description(self):
         """Check meta description issues"""
         description = self.metrics.get('meta_description')
         desc_length = self.metrics.get('meta_description_length', 0)
         
-        # Missing meta description
         if not description:
             self._add_issue(
                 issue_type='meta_description',
@@ -167,7 +152,6 @@ class IssueDetector:
             )
             return
         
-        # Meta description too short
         if desc_length < 120:
             self._add_issue(
                 issue_type='meta_description',
@@ -181,7 +165,6 @@ class IssueDetector:
                 data={'current_length': desc_length, 'recommended_length': '120-160'}
             )
         
-        # Meta description too long
         elif desc_length > 160:
             self._add_issue(
                 issue_type='meta_description',
@@ -195,16 +178,12 @@ class IssueDetector:
                 data={'current_length': desc_length, 'recommended_length': '120-160'}
             )
     
-    # ============================================
-    # H1 TAG CHECKS
-    # ============================================
     
     def _check_h1_tags(self):
         """Check H1 tag issues"""
         h1_count = self.metrics.get('h1_count', 0)
         h1_tags = self.metrics.get('h1_tags', [])
         
-        # Missing H1
         if h1_count == 0:
             self._add_issue(
                 issue_type='h1_tag',
@@ -218,7 +197,6 @@ class IssueDetector:
                 data={'current_count': 0, 'recommended_count': 1}
             )
         
-        # Multiple H1s
         elif h1_count > 1:
             self._add_issue(
                 issue_type='h1_tag',
@@ -232,16 +210,12 @@ class IssueDetector:
                 data={'current_count': h1_count, 'recommended_count': 1, 'h1_tags': h1_tags}
             )
     
-    # ============================================
-    # H2 TAG CHECKS
-    # ============================================
     
     def _check_h2_tags(self):
         """Check H2 tag issues"""
         h2_count = self.metrics.get('h2_count', 0)
         word_count = self.metrics.get('word_count', 0)
         
-        # No H2s on content-heavy pages
         if h2_count == 0 and word_count > 300:
             self._add_issue(
                 issue_type='heading_structure',
@@ -255,9 +229,6 @@ class IssueDetector:
                 data={'current_h2_count': 0, 'word_count': word_count}
             )
     
-    # ============================================
-    # HTTPS CHECK
-    # ============================================
     
     def _check_https(self):
         """Check HTTPS"""
@@ -276,9 +247,6 @@ class IssueDetector:
                 data={'current_protocol': 'HTTP', 'recommended_protocol': 'HTTPS'}
             )
     
-    # ============================================
-    # CANONICAL TAG CHECK
-    # ============================================
     
     def _check_canonical(self):
         """Check canonical tag"""
@@ -297,9 +265,6 @@ class IssueDetector:
                 data={'has_canonical': False}
             )
     
-    # ============================================
-    # IMAGE CHECKS
-    # ============================================
     
     def _check_images(self):
         """Check image issues"""
@@ -327,9 +292,6 @@ class IssueDetector:
                 }
             )
     
-    # ============================================
-    # WORD COUNT CHECK
-    # ============================================
     
     def _check_word_count(self):
         """Check content word count"""
@@ -348,16 +310,12 @@ class IssueDetector:
                 data={'current_words': word_count, 'recommended_words': 300}
             )
     
-    # ============================================
-    # LINKS CHECK
-    # ============================================
     
     def _check_links(self):
         """Check internal/external links"""
         internal_links = self.metrics.get('internal_links_count', 0)
         external_links = self.metrics.get('external_links_count', 0)
         
-        # Too few internal links
         if internal_links < 3:
             self._add_issue(
                 issue_type='internal_links',
@@ -371,9 +329,6 @@ class IssueDetector:
                 data={'current_count': internal_links, 'recommended_count': 3}
             )
     
-    # ============================================
-    # OPEN GRAPH CHECKS
-    # ============================================
     
     def _check_og_tags(self):
         """Check Open Graph tags for social media"""
@@ -393,9 +348,6 @@ class IssueDetector:
             )
 
 
-# ============================================
-# TEST FUNCTION
-# ============================================
 
 def test_issue_detector():
     """
@@ -405,7 +357,6 @@ def test_issue_detector():
     print("🧪 TESTING REAL ISSUE DETECTOR")
     print("="*60)
     
-    # Test Case 1: Website with issues
     print("\n📝 Test Case 1: Website with multiple issues")
     
     metrics_with_issues = {
@@ -435,7 +386,6 @@ def test_issue_detector():
         print(f"   {i}. [{issue['severity'].upper()}] {issue['title']}")
         print(f"      Impact: {issue['impact_score']} | Fix time: {issue['time_to_fix_hours']}h")
     
-    # Test Case 2: Well-optimized website
     print("\n📝 Test Case 2: Well-optimized website")
     
     metrics_optimized = {

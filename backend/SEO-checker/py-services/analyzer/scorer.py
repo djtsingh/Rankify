@@ -1,4 +1,3 @@
-# py-services/analyzer/scorer.py
 
 """
 Real Scoring Algorithm
@@ -26,42 +25,28 @@ class Scorer:
         """
         score = 0
         
-        # Title Tag (15 points)
         score += self._score_title()
         
-        # Meta Description (15 points)
         score += self._score_meta_description()
         
-        # H1 Tags (10 points)
         score += self._score_h1()
         
-        # Content Quality (10 points)
         score += self._score_content()
         
-        # Images (10 points)
         score += self._score_images()
         
-        # HTTPS (10 points)
         score += self._score_https()
         
-        # Canonical Tag (10 points)
         score += self._score_canonical()
         
-        # Internal Links (10 points)
         score += self._score_links()
         
-        # Open Graph Tags (5 points)
         score += self._score_og_tags()
         
-        # Heading Structure (5 points)
         score += self._score_heading_structure()
         
-        # Round to integer
         return round(score)
     
-    # ============================================
-    # TITLE SCORING (15 points)
-    # ============================================
     
     def _score_title(self):
         """Score title tag (15 points max)"""
@@ -82,9 +67,6 @@ class Scorer:
         else:
             return 5   # Too long
     
-    # ============================================
-    # META DESCRIPTION SCORING (15 points)
-    # ============================================
     
     def _score_meta_description(self):
         """Score meta description (15 points max)"""
@@ -105,9 +87,6 @@ class Scorer:
         else:
             return 5   # Too long
     
-    # ============================================
-    # H1 SCORING (10 points)
-    # ============================================
     
     def _score_h1(self):
         """Score H1 tags (10 points max)"""
@@ -120,9 +99,6 @@ class Scorer:
         else:
             return 5   # Multiple H1s (not ideal but not terrible)
     
-    # ============================================
-    # CONTENT SCORING (10 points)
-    # ============================================
     
     def _score_content(self):
         """Score content quality (10 points max)"""
@@ -137,9 +113,6 @@ class Scorer:
         else:
             return 0   # Very thin content
     
-    # ============================================
-    # IMAGE SCORING (10 points)
-    # ============================================
     
     def _score_images(self):
         """Score images (10 points max)"""
@@ -149,7 +122,6 @@ class Scorer:
         if image_count == 0:
             return 10  # No images = no problem
         
-        # Calculate percentage with alt text
         images_with_alt = image_count - images_without_alt
         alt_percentage = (images_with_alt / image_count) * 100
         
@@ -162,9 +134,6 @@ class Scorer:
         else:
             return 2   # Few have alt
     
-    # ============================================
-    # HTTPS SCORING (10 points)
-    # ============================================
     
     def _score_https(self):
         """Score HTTPS (10 points max)"""
@@ -172,9 +141,6 @@ class Scorer:
         
         return 10 if https_enabled else 0
     
-    # ============================================
-    # CANONICAL SCORING (10 points)
-    # ============================================
     
     def _score_canonical(self):
         """Score canonical tag (10 points max)"""
@@ -182,9 +148,6 @@ class Scorer:
         
         return 10 if has_canonical else 5  # 5 points if missing (not critical)
     
-    # ============================================
-    # LINKS SCORING (10 points)
-    # ============================================
     
     def _score_links(self):
         """Score internal links (10 points max)"""
@@ -199,9 +162,6 @@ class Scorer:
         else:
             return 0   # No links
     
-    # ============================================
-    # OPEN GRAPH SCORING (5 points)
-    # ============================================
     
     def _score_og_tags(self):
         """Score Open Graph tags (5 points max)"""
@@ -209,20 +169,15 @@ class Scorer:
         
         return 5 if has_og_tags else 0
     
-    # ============================================
-    # HEADING STRUCTURE SCORING (5 points)
-    # ============================================
     
     def _score_heading_structure(self):
         """Score heading structure (5 points max)"""
         h2_count = self.metrics.get('h2_count', 0)
         word_count = self.metrics.get('word_count', 0)
         
-        # If short content, H2s not critical
         if word_count < 300:
             return 5
         
-        # For longer content, H2s help structure
         if h2_count >= 3:
             return 5   # Good structure
         elif h2_count >= 1:
@@ -254,9 +209,6 @@ class Scorer:
         }
 
 
-# ============================================
-# TEST FUNCTION
-# ============================================
 
 def test_scorer():
     """
@@ -266,7 +218,6 @@ def test_scorer():
     print("🧪 TESTING REAL SCORING ALGORITHM")
     print("="*60)
     
-    # Test Case 1: Perfect website
     print("\n📝 Test Case 1: Perfect Website")
     perfect_metrics = {
         'title': 'Perfect SEO Title Between 30 and 60 Characters',
@@ -293,7 +244,6 @@ def test_scorer():
     for category, points in breakdown1['breakdown'].items():
         print(f"      {category}: {points}")
     
-    # Test Case 2: Poor website
     print("\n📝 Test Case 2: Poor Website")
     poor_metrics = {
         'title': 'Bad',
@@ -320,7 +270,6 @@ def test_scorer():
     for category, points in breakdown2['breakdown'].items():
         print(f"      {category}: {points}")
     
-    # Test Case 3: Average website
     print("\n📝 Test Case 3: Average Website")
     average_metrics = {
         'title': 'Average Title',

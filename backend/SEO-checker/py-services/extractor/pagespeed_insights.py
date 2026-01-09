@@ -26,7 +26,6 @@ class PageSpeedInsightsAPI:
     
     API_BASE = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
     
-    # Thresholds from Google (as of 2024)
     CWV_THRESHOLDS = {
         'LCP': {'good': 2500, 'poor': 4000},  # milliseconds
         'FID': {'good': 100, 'poor': 300},     # milliseconds
@@ -79,12 +78,10 @@ class PageSpeedInsightsAPI:
             'strategy': strategy,
         }
         
-        # Add categories
         for cat in categories:
             if 'category' not in params:
                 params['category'] = cat
             else:
-                # API accepts multiple category params
                 pass
         
         if self.api_key:
@@ -124,10 +121,8 @@ class PageSpeedInsightsAPI:
             'suggestions': [],
         }
         
-        # Extract Lighthouse results
         lighthouse = data.get('lighthouseResult', {})
         
-        # Category scores
         categories = lighthouse.get('categories', {})
         for cat_key, cat_data in categories.items():
             result['lighthouseScores'][cat_key] = {
@@ -135,10 +130,8 @@ class PageSpeedInsightsAPI:
                 'title': cat_data.get('title', cat_key),
             }
         
-        # Core Web Vitals from lab data (audits)
         audits = lighthouse.get('audits', {})
         
-        # LCP - Largest Contentful Paint
         if 'largest-contentful-paint' in audits:
             lcp_data = audits['largest-contentful-paint']
             lcp_value = lcp_data.get('numericValue', 0)  # milliseconds
@@ -150,11 +143,9 @@ class PageSpeedInsightsAPI:
                 'unit': 'seconds'
             }
         
-        # FID (approximated by Total Blocking Time in lab)
         if 'total-blocking-time' in audits:
             tbt_data = audits['total-blocking-time']
             tbt_value = tbt_data.get('numericValue', 0)
-            # TBT is a proxy for FID in lab environment
             result['coreWebVitals']['fid'] = {
                 'value': round(tbt_value, 0),
                 'displayValue': tbt_data.get('displayValue', ''),
@@ -164,7 +155,6 @@ class PageSpeedInsightsAPI:
                 'note': 'Estimated from Total Blocking Time'
             }
         
-        # CLS - Cumulative Layout Shift
         if 'cumulative-layout-shift' in audits:
             cls_data = audits['cumulative-layout-shift']
             cls_value = cls_data.get('numericValue', 0)
@@ -176,7 +166,6 @@ class PageSpeedInsightsAPI:
                 'unit': ''
             }
         
-        # INP approximation (from interaction audits)
         if 'max-potential-fid' in audits:
             mpfid = audits['max-potential-fid'].get('numericValue', 0)
             result['coreWebVitals']['inp'] = {
@@ -188,7 +177,6 @@ class PageSpeedInsightsAPI:
                 'note': 'Estimated from Max Potential FID'
             }
         
-        # FCP - First Contentful Paint
         if 'first-contentful-paint' in audits:
             fcp_data = audits['first-contentful-paint']
             fcp_value = fcp_data.get('numericValue', 0)
@@ -200,7 +188,6 @@ class PageSpeedInsightsAPI:
                 'unit': 'seconds'
             }
         
-        # TTFB - Time to First Byte
         if 'server-response-time' in audits:
             ttfb_data = audits['server-response-time']
             ttfb_value = ttfb_data.get('numericValue', 0)
@@ -212,7 +199,6 @@ class PageSpeedInsightsAPI:
                 'unit': 'ms'
             }
         
-        # Additional performance metrics
         performance_audits = [
             ('speed-index', 'speedIndex'),
             ('interactive', 'timeToInteractive'),
@@ -233,7 +219,6 @@ class PageSpeedInsightsAPI:
                     'description': audit_data.get('description', ''),
                 }
         
-        # Field data (if available - Chrome User Experience Report)
         loading_experience = data.get('loadingExperience', {})
         if loading_experience.get('metrics'):
             field_metrics = loading_experience['metrics']
@@ -242,7 +227,6 @@ class PageSpeedInsightsAPI:
                 'origin': loading_experience.get('id', ''),
             }
             
-            # Parse field CWV
             if 'LARGEST_CONTENTFUL_PAINT_MS' in field_metrics:
                 lcp_field = field_metrics['LARGEST_CONTENTFUL_PAINT_MS']
                 result['fieldData']['lcp'] = {
@@ -264,7 +248,6 @@ class PageSpeedInsightsAPI:
                     'category': inp_field.get('category', 'AVERAGE'),
                 }
         
-        # Top improvement suggestions
         opportunities = lighthouse.get('audits', {})
         improvement_audits = [
             'render-blocking-resources',
@@ -295,7 +278,6 @@ class PageSpeedInsightsAPI:
                         'displayValue': audit.get('displayValue', ''),
                     })
         
-        # Sort suggestions by potential savings
         result['suggestions'].sort(key=lambda x: x.get('savings_ms', 0), reverse=True)
         result['suggestions'] = result['suggestions'][:5]  # Top 5
         
@@ -385,7 +367,6 @@ def format_cwv_for_frontend(pagespeed_result: Dict) -> Dict:
         Dictionary matching frontend CoreWebVitals interface
     """
     if not pagespeed_result.get('success', False):
-        # Return estimated values on error
         return {
             'lcp': {'value': 2.5, 'rating': 'needs-improvement', 'target': 2.5, 'estimated': True},
             'fid': {'value': 100, 'rating': 'good', 'target': 100, 'estimated': True},

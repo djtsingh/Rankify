@@ -1,4 +1,3 @@
-# py-services/parser/html_parser.py
 
 """
 Real HTML Parser using BeautifulSoup
@@ -33,36 +32,28 @@ class HTMLParser:
         metrics = {
             'url': self.url,
             
-            # Title
             'title': self._get_title(),
             'title_length': self._get_title_length(),
             
-            # Meta Description
             'meta_description': self._get_meta_description(),
             'meta_description_length': self._get_meta_description_length(),
             
-            # Headings
             'h1_tags': self._get_h1_tags(),
             'h1_count': self._get_h1_count(),
             'h2_count': self._get_h2_count(),
             
-            # Content
             'word_count': self._get_word_count(),
             
-            # Images
             'image_count': self._get_image_count(),
             'images_without_alt': self._get_images_without_alt(),
             
-            # Links
             'internal_links_count': self._get_internal_links_count(),
             'external_links_count': self._get_external_links_count(),
             
-            # Technical
             'https_enabled': self._is_https(),
             'has_canonical': self._has_canonical(),
             'canonical_url': self._get_canonical_url(),
             
-            # Open Graph (Social Media)
             'has_og_tags': self._has_og_tags(),
             'og_title': self._get_og_tag('og:title'),
             'og_description': self._get_og_tag('og:description'),
@@ -71,9 +62,6 @@ class HTMLParser:
         
         return metrics
     
-    # ============================================
-    # TITLE METHODS
-    # ============================================
     
     def _get_title(self):
         """Get page title"""
@@ -85,9 +73,6 @@ class HTMLParser:
         title = self._get_title()
         return len(title) if title else 0
     
-    # ============================================
-    # META DESCRIPTION METHODS
-    # ============================================
     
     def _get_meta_description(self):
         """Get meta description"""
@@ -101,9 +86,6 @@ class HTMLParser:
         desc = self._get_meta_description()
         return len(desc) if desc else 0
     
-    # ============================================
-    # HEADING METHODS
-    # ============================================
     
     def _get_h1_tags(self):
         """Get all H1 tags"""
@@ -118,26 +100,17 @@ class HTMLParser:
         """Count H2 tags"""
         return len(self.soup.find_all('h2'))
     
-    # ============================================
-    # CONTENT METHODS
-    # ============================================
     
     def _get_word_count(self):
         """Count words in visible text"""
-        # Get all text
         text = self.soup.get_text()
         
-        # Remove extra whitespace
         text = re.sub(r'\s+', ' ', text).strip()
         
-        # Split into words
         words = text.split()
         
         return len(words)
     
-    # ============================================
-    # IMAGE METHODS
-    # ============================================
     
     def _get_image_count(self):
         """Count all images"""
@@ -153,9 +126,6 @@ class HTMLParser:
                 count += 1
         return count
     
-    # ============================================
-    # LINK METHODS
-    # ============================================
     
     def _get_internal_links_count(self):
         """Count internal links"""
@@ -163,7 +133,6 @@ class HTMLParser:
         count = 0
         for link in links:
             href = link['href']
-            # Check if internal link
             if href.startswith('/') or self.domain in href:
                 count += 1
         return count
@@ -174,14 +143,10 @@ class HTMLParser:
         count = 0
         for link in links:
             href = link['href']
-            # Check if external link
             if href.startswith('http') and self.domain not in href:
                 count += 1
         return count
     
-    # ============================================
-    # TECHNICAL METHODS
-    # ============================================
     
     def _is_https(self):
         """Check if URL uses HTTPS"""
@@ -199,9 +164,6 @@ class HTMLParser:
             return canonical['href']
         return None
     
-    # ============================================
-    # OPEN GRAPH METHODS
-    # ============================================
     
     def _has_og_tags(self):
         """Check if page has Open Graph tags"""
@@ -216,9 +178,6 @@ class HTMLParser:
         return None
 
 
-# ============================================
-# TEST FUNCTION
-# ============================================
 
 def test_parser():
     """
@@ -228,7 +187,6 @@ def test_parser():
     print("🧪 TESTING REAL HTML PARSER")
     print("="*60)
     
-    # Sample HTML (you can replace with real scraped HTML)
     sample_html = """
     <!DOCTYPE html>
     <html>

@@ -1,4 +1,3 @@
-# python-services/database/save_results.py
 
 """
 Complete result saving with all data
@@ -49,20 +48,16 @@ def save_complete_scan_results(scan_id, analysis_data):
         dict: Save summary
     """
     try:
-        # Extract data
         score = analysis_data['score']
         metrics = analysis_data['metrics']
         issues = analysis_data['issues']
         
-        # Save result
         result_id = save_scan_result(scan_id, score, metrics)
         print(f"✅ Saved scan result: {result_id}")
         
-        # Save issues
         issues_count = save_issues(scan_id, issues)
         print(f"✅ Saved {issues_count} issues")
         
-        # Update scan status to completed
         update_scan_status(scan_id, 'completed')
         print(f"✅ Scan marked as completed")
         
@@ -74,14 +69,10 @@ def save_complete_scan_results(scan_id, analysis_data):
         
     except Exception as e:
         print(f"❌ Error saving results: {e}")
-        # Mark scan as failed
         update_scan_status(scan_id, 'failed', str(e))
         raise
 
 
-# ============================================
-# TEST FUNCTION
-# ============================================
 
 def test_save_complete_results():
     """
@@ -93,13 +84,11 @@ def test_save_complete_results():
     print("🧪 TESTING COMPLETE RESULT SAVING")
     print("="*60)
     
-    # Step 1: Create a scan
     print("\n📝 Step 1: Creating test scan...")
     test_url = "https://test-example.com"
     scan_id = create_scan(test_url)
     print(f"✅ Scan created: {scan_id}")
     
-    # Step 2: Prepare dummy analysis data
     print("\n📝 Step 2: Preparing analysis data...")
     analysis_data = {
         'score': 68,
@@ -173,12 +162,10 @@ def test_save_complete_results():
     }
     print(f"✅ Analysis data prepared (Score: {analysis_data['score']}, Issues: {len(analysis_data['issues'])})")
     
-    # Step 3: Save complete results
     print("\n📝 Step 3: Saving complete results to database...")
     save_summary = save_complete_scan_results(scan_id, analysis_data)
     print(f"✅ Save complete: {save_summary}")
     
-    # Step 4: Verify data was saved
     print("\n📝 Step 4: Verifying saved data...")
     from database.operations import get_complete_scan_data
     

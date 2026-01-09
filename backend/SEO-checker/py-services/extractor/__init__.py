@@ -11,7 +11,6 @@ Provides comprehensive SEO analysis tools including:
 from .comprehensive_extractor import ComprehensiveMetricsExtractor
 from .text_analyzer import TextAnalyzer
 
-# Optional imports that may not be available
 try:
     from .security_headers import (
         SecurityHeadersAnalyzer, 

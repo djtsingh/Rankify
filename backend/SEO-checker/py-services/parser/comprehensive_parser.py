@@ -1,4 +1,3 @@
-# py-services/parser/comprehensive_parser.py
 
 """
 Comprehensive HTML Parser
@@ -41,7 +40,6 @@ class ComprehensiveHTMLParser:
         self.domain = self.parsed_url.netloc
         self.load_time_ms = load_time_ms
         
-        # Pre-compute common elements
         self._all_links = self.soup.find_all('a', href=True)
         self._all_images = self.soup.find_all('img')
         self._all_text = self._extract_visible_text()
@@ -58,31 +56,21 @@ class ComprehensiveHTMLParser:
             'url': self.url,
             'domain': self.domain,
             
-            # === TECHNICAL SEO ===
             'technical': self._extract_technical(),
             
-            # === ON-PAGE SEO ===
             'onPage': self._extract_on_page(),
             
-            # === CONTENT INTELLIGENCE ===
             'contentIntelligence': self._extract_content_intelligence(),
             
-            # === USER EXPERIENCE ===
             'userExperience': self._extract_user_experience(),
             
-            # === SOCIAL SEO ===
             'social': self._extract_social(),
             
-            # === PERFORMANCE (basic, enhanced by scraper) ===
             'performance': self._extract_performance(),
             
-            # === LEGACY FLAT METRICS (for backward compatibility) ===
             **self._extract_flat_metrics()
         }
     
-    # ========================================
-    # TECHNICAL SEO EXTRACTION
-    # ========================================
     
     def _extract_technical(self) -> dict:
         """Extract all technical SEO metrics"""
@@ -164,11 +152,9 @@ class ComprehensiveHTMLParser:
     def _count_render_blocking(self) -> int:
         """Count render-blocking resources"""
         count = 0
-        # CSS in head without media/async
         for link in self.soup.find_all('link', rel='stylesheet'):
             if not link.get('media') or link.get('media') == 'all':
                 count += 1
-        # JS in head without async/defer
         for script in self.soup.head.find_all('script', src=True) if self.soup.head else []:
             if not script.get('async') and not script.get('defer'):
                 count += 1
@@ -189,11 +175,9 @@ class ComprehensiveHTMLParser:
     
     def _has_responsive_hints(self) -> bool:
         """Check for responsive design hints"""
-        # Check for responsive meta viewport
         viewport = self.soup.find('meta', attrs={'name': 'viewport'})
         if viewport and 'width=device-width' in viewport.get('content', ''):
             return True
-        # Check for media queries in inline styles
         styles = self.soup.find_all('style')
         for style in styles:
             if '@media' in str(style):
@@ -256,9 +240,6 @@ class ComprehensiveHTMLParser:
             'richResultsEligible': types,
         }
     
-    # ========================================
-    # ON-PAGE SEO EXTRACTION
-    # ========================================
     
     def _extract_on_page(self) -> dict:
         """Extract all on-page SEO metrics"""
@@ -372,7 +353,6 @@ class ComprehensiveHTMLParser:
         if words == 0 or sentences == 0:
             return 0
         
-        # Flesch Reading Ease formula
         score = 206.835 - 1.015 * (words / sentences) - 84.6 * (syllables / words)
         return max(0, min(100, int(score)))
     
@@ -393,7 +373,6 @@ class ComprehensiveHTMLParser:
     
     def _extract_keyword_metrics(self) -> dict:
         """Extract keyword-related metrics"""
-        # Get most common words (potential keywords)
         words_lower = [w.lower() for w in self._word_list if len(w) > 3]
         common = Counter(words_lower).most_common(10)
         
@@ -426,7 +405,6 @@ class ComprehensiveHTMLParser:
             if href.startswith('#') or href.startswith('javascript:'):
                 continue
             
-            # Normalize URL
             full_url = urljoin(self.url, href)
             parsed = urlparse(full_url)
             
@@ -466,9 +444,6 @@ class ComprehensiveHTMLParser:
             'lowercase': self.url == self.url.lower(),
         }
     
-    # ========================================
-    # CONTENT INTELLIGENCE
-    # ========================================
     
     def _extract_content_intelligence(self) -> dict:
         """Extract content intelligence metrics"""
@@ -506,7 +481,6 @@ class ComprehensiveHTMLParser:
     
     def _extract_topics(self) -> dict:
         """Extract main topics from content"""
-        # Simple topic extraction based on headings and frequent words
         h1_text = ' '.join(h.get_text() for h in self.soup.find_all('h1'))
         h2_text = ' '.join(h.get_text() for h in self.soup.find_all('h2'))
         
@@ -524,26 +498,21 @@ class ComprehensiveHTMLParser:
             'trustworthiness': [],
         }
         
-        # Check for author information
         author = self.soup.find(attrs={'class': re.compile(r'author|byline', re.I)})
         if author:
             signals['expertise'].append('Author information present')
         
-        # Check for contact information
         contact_links = self.soup.find_all('a', href=re.compile(r'contact|about|mailto:', re.I))
         if contact_links:
             signals['trustworthiness'].append('Contact information visible')
         
-        # Check for privacy/terms links
         legal_links = self.soup.find_all('a', href=re.compile(r'privacy|terms|policy', re.I))
         if legal_links:
             signals['trustworthiness'].append('Privacy policy present')
         
-        # Check for HTTPS
         if self.url.startswith('https://'):
             signals['trustworthiness'].append('HTTPS enabled')
         
-        # Check for testimonials/reviews
         if self.soup.find(attrs={'class': re.compile(r'testimonial|review|rating', re.I)}):
             signals['authoritativeness'].append('Social proof present')
         
@@ -555,9 +524,6 @@ class ComprehensiveHTMLParser:
             'overallScore': 65,
         }
     
-    # ========================================
-    # USER EXPERIENCE
-    # ========================================
     
     def _extract_user_experience(self) -> dict:
         """Extract user experience metrics"""
@@ -571,18 +537,15 @@ class ComprehensiveHTMLParser:
         """Analyze accessibility features"""
         issues = []
         
-        # Check images without alt
         imgs_without_alt = sum(1 for img in self._all_images if not img.get('alt', '').strip())
         if imgs_without_alt > 0:
             issues.append({'type': 'Missing alt text', 'count': imgs_without_alt, 'severity': 'serious'})
         
-        # Check form labels
         inputs = self.soup.find_all('input')
         inputs_without_label = sum(1 for inp in inputs if not inp.get('id') or not self.soup.find('label', attrs={'for': inp.get('id')}))
         if inputs_without_label > 0:
             issues.append({'type': 'Missing form labels', 'count': inputs_without_label, 'severity': 'serious'})
         
-        # Check heading structure
         if not self.soup.find('h1'):
             issues.append({'type': 'Missing H1', 'count': 1, 'severity': 'moderate'})
         
@@ -609,11 +572,9 @@ class ComprehensiveHTMLParser:
     
     def _analyze_engagement_elements(self) -> dict:
         """Analyze engagement elements"""
-        # Count CTAs
         cta_patterns = re.compile(r'(btn|button|cta|action)', re.I)
         ctas = self.soup.find_all(attrs={'class': cta_patterns})
         
-        # Check for forms
         forms = self.soup.find_all('form')
         
         return {
@@ -622,9 +583,6 @@ class ComprehensiveHTMLParser:
             'interactiveElements': len(ctas) + len(forms),
         }
     
-    # ========================================
-    # SOCIAL SEO
-    # ========================================
     
     def _extract_social(self) -> dict:
         """Extract social media SEO elements"""
@@ -669,9 +627,6 @@ class ComprehensiveHTMLParser:
             'creator': twitter_tags.get('creator', ''),
         }
     
-    # ========================================
-    # PERFORMANCE
-    # ========================================
     
     def _extract_performance(self) -> dict:
         """Extract basic performance metrics"""
@@ -682,9 +637,6 @@ class ComprehensiveHTMLParser:
             'resourceCount': len(self.soup.find_all(['script', 'link', 'img'])),
         }
     
-    # ========================================
-    # LEGACY FLAT METRICS
-    # ========================================
     
     def _extract_flat_metrics(self) -> dict:
         """Extract flat metrics for backward compatibility with existing code"""
@@ -697,34 +649,27 @@ class ComprehensiveHTMLParser:
         h1_tags = [h.get_text().strip() for h in self.soup.find_all('h1')]
         
         return {
-            # Title
             'title': title,
             'title_length': len(title) if title else 0,
             
-            # Meta Description
             'meta_description': meta_desc,
             'meta_description_length': len(meta_desc) if meta_desc else 0,
             
-            # Headings
             'h1_tags': h1_tags,
             'h1_count': len(h1_tags),
             'h2_count': len(self.soup.find_all('h2')),
             'h3_count': len(self.soup.find_all('h3')),
             
-            # Content
             'word_count': len(self._word_list),
             'paragraph_count': len(self.soup.find_all('p')),
             'text_to_html_ratio': round(len(self._all_text) / max(len(self.html), 1) * 100, 2),
             
-            # Images
             'image_count': len(self._all_images),
             'images_without_alt': sum(1 for img in self._all_images if not img.get('alt', '').strip()),
             
-            # Links
             'internal_links_count': len([l for l in self._all_links if self.domain in urljoin(self.url, l.get('href', ''))]),
             'external_links_count': len([l for l in self._all_links if self.domain not in urljoin(self.url, l.get('href', '')) and l.get('href', '').startswith('http')]),
             
-            # Technical
             'https_enabled': self.url.startswith('https://'),
             'has_canonical': self.soup.find('link', rel='canonical') is not None,
             'canonical_url': (self.soup.find('link', rel='canonical') or {}).get('href'),
@@ -733,13 +678,11 @@ class ComprehensiveHTMLParser:
             'has_structured_data': len(self.soup.find_all('script', type='application/ld+json')) > 0,
             'viewport_configured': self._has_viewport(),
             
-            # Language
             'language': self._get_language(),
         }
     
     def _extract_visible_text(self) -> str:
         """Extract visible text from HTML"""
-        # Remove script and style elements
         for element in self.soup(['script', 'style', 'noscript', 'header', 'footer', 'nav']):
             element.decompose()
         
@@ -748,9 +691,6 @@ class ComprehensiveHTMLParser:
         return text
 
 
-# ============================================
-# TEST
-# ============================================
 
 if __name__ == "__main__":
     import json

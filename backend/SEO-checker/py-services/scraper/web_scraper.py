@@ -28,35 +28,24 @@ class WebScraper:
         }
         
         try:
-            # Use async_playwright instead of sync_playwright
             async with async_playwright() as p:
-                # Launch browser (headless mode) -> Must await this
                 browser = await p.chromium.launch(headless=True)
                 
-                # Create new page -> Must await this
                 page = await browser.new_page()
                 
-                # Track load time
                 start_time = time.time()
                 
-                # Navigate to URL -> Must await this
                 response = await page.goto(url, timeout=self.timeout, wait_until='networkidle')
                 
-                # Calculate load time
                 load_time = (time.time() - start_time) * 1000  # Convert to ms
                 
-                # Get status code
                 status_code = response.status if response else None
                 
-                # Check if page loaded successfully
                 if status_code and 200 <= status_code < 300:
-                    # Get HTML content -> Must await this
                     html = await page.content()
                     
-                    # Get page title -> Must await this
                     page_title = await page.title()
                     
-                    # Take screenshot -> Must await this
                     screenshot = await page.screenshot(full_page=False)
                     
                     result.update({
@@ -77,7 +66,6 @@ class WebScraper:
                     result['error'] = f"HTTP {status_code}"
                     print(f"   ❌ Page returned status code: {status_code}")
                 
-                # Close browser -> Must await this
                 await browser.close()
                 
         except PlaywrightTimeout:
@@ -91,9 +79,6 @@ class WebScraper:
         return result
 
 
-# ============================================
-# TEST FUNCTION (UPDATED FOR ASYNC)
-# ============================================
 
 async def test_scraper():
     """
@@ -105,7 +90,6 @@ async def test_scraper():
     
     scraper = WebScraper(timeout=30000)
     
-    # Test URLs
     test_urls = [
         "https://example.com",
         "https://google.com",
@@ -115,7 +99,6 @@ async def test_scraper():
     for i, url in enumerate(test_urls, 1):
         print(f"\n📝 Test {i}/{len(test_urls)}: {url}")
         
-        # Must await the scrape method
         result = await scraper.scrape(url)
         
         if result['success']:
@@ -132,5 +115,4 @@ async def test_scraper():
 
 
 if __name__ == "__main__":
-    # Run the async test function using asyncio
     asyncio.run(test_scraper())

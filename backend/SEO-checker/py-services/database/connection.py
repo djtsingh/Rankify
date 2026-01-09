@@ -1,4 +1,3 @@
-# python-services/database/connection.py
 
 import psycopg2
 from psycopg2.extras import RealDictCursor, Json
@@ -6,10 +5,8 @@ import os
 from dotenv import load_dotenv
 from contextlib import contextmanager
 
-# Load environment variables
 load_dotenv()
 
-# Database configuration
 DB_CONFIG = {
     'host': os.getenv('DB_HOST', 'localhost'),
     'port': os.getenv('DB_PORT', '5432'),
