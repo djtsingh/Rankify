@@ -146,56 +146,98 @@ Rankify/
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Production Deployment
+
+Rankify is configured for production deployment only. All services are deployed to Azure's serverless infrastructure.
 
 ### Prerequisites
-- Node.js 22+
-- pnpm 9+
-- Python 3.11+ (for backend worker)
+- Azure subscription with required resources
+- GitHub repository with proper secrets configured
+- Azure CLI installed (for manual deployments)
 
-### Installation
+### Deployment Architecture
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/rankify.git
-cd rankify
-
-# Install dependencies
-pnpm install
-
-# Set up environment variables
-cp apps/web/.env.example apps/web/.env.local
-cp api/local.settings.example.json api/local.settings.json
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        Azure Static Web Apps                      │
+│                    (Frontend - Next.js Static)                    │
+│                    https://your-app.azurestaticapps.net           │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                      Azure Functions App                          │
+│                   (API - Node.js TypeScript)                      │
+│                  https://rankify-v1-src.azurewebsites.net         │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │
+            ┌─────────────────┴─────────────────┐
+            ▼                                   ▼
+┌───────────────────────┐         ┌──────────────────────────┐
+│   Azure Storage Queue │         │   Azure PostgreSQL        │
+│     (scan-jobs)       │         │  (rankify-v1-data)        │
+└───────────┬───────────┘         └──────────────────────────┘
+            │
+            ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    Azure Container Apps                           │
+│                  (Python SEO Worker)                              │
+│                                                                   │
+│  - Polls scan-jobs queue                                          │
+│  - Fetches URL, extracts metrics                                  │
+│  - Saves results to PostgreSQL                                    │
+│  - Auto-scales 0-3 replicas based on queue length                 │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### Development
+### Required GitHub Secrets
 
-```bash
-# Run all services concurrently
-pnpm dev
+Add these secrets to your GitHub repository:
 
-# Or run services individually:
-pnpm dev:web      # Frontend only (http://localhost:3000)
-pnpm dev:api      # API only (http://localhost:7071)
+```
+AZURE_CLIENT_ID=<service-principal-client-id>
+AZURE_TENANT_ID=<service-principal-tenant-id>
+AZURE_SUBSCRIPTION_ID=<azure-subscription-id>
+AZURE_STORAGE_CONNECTION_STRING=<storage-connection-string>
+DATABASE_URL=<postgresql-connection-string>
+ACR_USERNAME=<container-registry-username>
+ACR_PASSWORD=<container-registry-password>
+AZURE_STATIC_WEB_APPS_API_TOKEN=<swa-deployment-token>
+AZURE_FUNCTIONAPP_PUBLISH_PROFILE=<function-app-publish-profile>
 ```
 
-### Environment Variables
+### Automatic Deployment
 
-#### Frontend (`apps/web/.env.local`)
-```env
-NEXT_PUBLIC_API_URL=http://localhost:7071
-NEXT_PUBLIC_USE_MOCK=true
-```
+Push to the `main` branch to trigger automatic deployments:
 
-#### API (`api/local.settings.json`)
-```json
-{
-  "Values": {
-    "DATABASE_URL": "postgresql://...",
-    "AZURE_STORAGE_CONNECTION_STRING": "..."
-  }
-}
-```
+1. **Frontend**: Azure Static Web Apps (triggered by changes in `apps/web/**`)
+2. **API**: Azure Functions (triggered by changes in `api/**`)
+3. **Worker**: Azure Container Apps (triggered by changes in `backend/SEO-checker/py-services/**`)
+
+### Production Checklist
+
+Before deploying to production, ensure:
+
+- [ ] All GitHub secrets are configured
+- [ ] Azure resources are provisioned and accessible
+- [ ] Database is initialized with proper schema
+- [ ] Storage account has the `scan-jobs` queue created
+- [ ] Container registry has proper access policies
+- [ ] Service principal has required Azure permissions
+
+### Monitoring & Maintenance
+
+- **Application Insights**: Enabled for all Azure services
+- **Azure Monitor**: Configured for alerts and metrics
+- **Log Analytics**: Centralized logging workspace
+- **Backup**: Automated database backups configured
+
+### Security Considerations
+
+- All secrets stored in Azure Key Vault (recommended)
+- Network security groups configured
+- Azure Front Door for global CDN (optional)
+- Azure Policy for compliance monitoring
 
 ---
 

@@ -1,19 +1,17 @@
 import type { NextConfig } from "next";
 
-// Only use static export in production build (for Azure Static Web Apps)
-// In development, we need dynamic routing for scan IDs
-const isProduction = process.env.NODE_ENV === 'production';
-
+// Production-only configuration for Azure Static Web Apps
 const nextConfig: NextConfig = {
-  // Static export ONLY for production builds (Azure Static Web Apps deployment)
-  // Disabled in development to allow dynamic routes with runtime scan IDs
-  ...(isProduction && { output: 'export' }),
+  // Always use static export for production deployment
+  output: 'export',
   images: {
     unoptimized: true,
   },
   trailingSlash: true,
-  // Don't override NEXT_PUBLIC_API_URL here - it's set in .env.local
-  // The client.ts file has its own fallback for local development
+  // Production API URL is set in environment variables
+  env: {
+    NEXT_PUBLIC_API_URL: 'https://rankify-v1-src.azurewebsites.net',
+  },
 };
 
 export default nextConfig;

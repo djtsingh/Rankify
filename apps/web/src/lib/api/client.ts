@@ -1,10 +1,10 @@
-// API Base URL - should NOT end with /api (it's added in endpoints)
-// Use explicit URL to avoid Next.js API route confusion
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7071';
+// API Base URL - Production Azure Functions endpoint
+// No local development fallback - production only
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rankify-v1-src.azurewebsites.net';
 
-// Log the API URL in development
+// Production logging only for errors
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log('[API Client] Base URL:', API_BASE_URL);
+  console.log('[API Client] Production URL:', API_BASE_URL);
 }
 
 export class APIError extends Error {
