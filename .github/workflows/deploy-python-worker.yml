@@ -46,9 +46,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       - name: Log in to Azure Container Registry
-        uses: azure/container-login@v1
-        with:
-          registry: rankifyacr.azurecr.io
+        run: az acr login --name rankifyacr
       
       - name: Validate prerequisites
         run: |
@@ -124,8 +122,7 @@ jobs:
               --environment ${{ env.CONTAINER_APP_ENV }} \
               --image ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
               --registry-server ${{ env.AZURE_CONTAINER_REGISTRY }} \
-              --registry-username ${{ secrets.ACR_USERNAME }} \
-              --registry-password ${{ secrets.ACR_PASSWORD }} \
+              --registry-identity system \
               --min-replicas 0 \
               --max-replicas 3 \
               --scale-rule-name queue-scale \
@@ -204,11 +201,10 @@ jobs:
           echo "Commit: ${{ github.sha }}"
           echo "Triggered by: ${{ github.actor }}"
           
-          if [ ${{ job.status }} = 'success' ]; then
+          if [ "${{ job.status }}" = "success" ]; then
             echo "Status: ✅ SUCCESS"
             echo "The Python worker has been successfully deployed!"
           else
             echo "Status: ❌ FAILED"
             echo "Deployment failed. Check the logs above for details."
-            exit 1
           fi
