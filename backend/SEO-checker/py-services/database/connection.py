@@ -2,7 +2,7 @@
 
 import psycopg2
 from psycopg2.extras import RealDictCursor, Json
-import os
+import os 
 from dotenv import load_dotenv
 from contextlib import contextmanager
 
