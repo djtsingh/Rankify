@@ -14,7 +14,6 @@ lxml==4.9.3
 # Utils
 python-dotenv==1.0.0
 
-# Keep for backwards compatibility
 requests==2.31.0
 urllib3==2.1.0
 

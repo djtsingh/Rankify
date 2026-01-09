@@ -4,10 +4,9 @@ import { prisma } from "../lib/prisma";
 export async function health(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Health check requested');
 
-    // Test database connection
     let dbStatus = 'disconnected';
     let dbError = null;
-    
+
     try {
         await prisma.$queryRaw`SELECT 1`;
         dbStatus = 'connected';
