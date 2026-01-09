@@ -45,6 +45,11 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
+      - name: Log in to Azure Container Registry
+        uses: azure/container-login@v1
+        with:
+          registry: rankifyacr.azurecr.io
+      
       - name: Validate prerequisites
         run: |
           echo "Validating deployment prerequisites..."
