@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # 1. Database (The "Memory")
+  postgres:
+    image: postgres:15-alpine
+    container_name: rankify_db_local
+    environment:
+      POSTGRES_DB: rankify
+      POSTGRES_USER: djt_rankify_1
+      POSTGRES_PASSWORD: djtrankify1
+    ports:
+      - "5432:5432"
+    volumes:
+      # Automatically runs your schema.sql when the container creates for the first time
+      - ./backend/SEO-checker/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U djt_rankify_1 -d rankify"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Azure Emulator (The "Fake Cloud")
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: rankify_azurite
+    ports:
+      - "10000:10000" # Blob
+      - "10001:10001" # Queue
+    command: "azurite --queueHost 0.0.0.0 --blobHost 0.0.0.0 --loose"
+    # Added "--loose" to prevent strict header errors during dev
+
+  # 3. Python Worker (The "Crawler")
+  seo-worker:
+    build:
+      context: ./backend/SEO-checker/py-services
+      dockerfile: Dockerfile
+    container_name: rankify_worker
+    environment:
+      # This is the MAGIC string that tells Python to look at the 'azurite' container, not Azure
+      AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;"
+      DB_CONNECTION: "postgresql://djt_rankify_1:djtrankify1@postgres:5432/rankify"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      azurite:
+        condition: service_started

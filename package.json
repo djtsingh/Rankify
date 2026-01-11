@@ -4,6 +4,19 @@
   "description": "Rankify - SEO Made Simple",
   "private": true,
   "scripts": {
+    "dev": "start cmd /k \"npm run dev:internal\"",
+    "dev:internal": "concurrently \"npm run start:infra\" \"npm run start:services\"",
+
+    "start:infra": "docker-compose -f docker-compose.local.yml up",
+
+    "start:services": "concurrently -k \"npm run start:api\" \"npm run start:frontend\"",
+
+    "start:api": "cd api && (func start --port 7071 & timeout /t 999999 /nobreak >nul)",
+
+    "start:frontend": "swa start http://localhost:3000 --api-location http://localhost:7071 --run \"npm run dev --prefix apps/web\"",
+
+    "stop": "docker-compose -f docker-compose.local.yml down",
+
     "build:web": "pnpm --filter web build",
     "build:api": "cd api && npm run build",
     "build": "pnpm build:web && pnpm build:api",
@@ -11,12 +24,17 @@
     "deploy:api": "echo 'API deployment handled by GitHub Actions'",
     "deploy:worker": "echo 'Worker deployment handled by GitHub Actions'"
   },
-  "keywords": ["seo", "analytics", "saas"],
+  "keywords": [
+    "seo",
+    "analytics",
+    "saas"
+  ],
   "author": "djtsingh",
   "license": "Proprietary",
   "packageManager": "pnpm@10.24.0",
   "devDependencies": {
-    "typescript": "^5.3.3",
-    "prettier": "^3.1.1"
+    "concurrently": "^9.2.1",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
   }
 }

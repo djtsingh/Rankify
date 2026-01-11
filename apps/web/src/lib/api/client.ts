@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://rankify-v1-src.azurewebsites.net';
+// Use relative URLs in development (SWA CLI will proxy /api/* to Functions)
+// Use full URL in production
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? '' : 'https://rankify-v1-src.azurewebsites.net');
 
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   console.log('[API Client] Production URL:', API_BASE_URL);

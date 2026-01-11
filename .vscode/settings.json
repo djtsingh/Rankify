@@ -9,5 +9,11 @@
     "azureFunctions.pythonVenv": ".venv",
     "azureFunctions.projectLanguage": "Python",
     "azureFunctions.projectRuntime": "~4",
-    "debug.internalConsoleOptions": "neverOpen"
+    "debug.internalConsoleOptions": "neverOpen",
+    "chat.tools.terminal.autoApprove": {
+        "/^Start-Sleep -Seconds 5; netstat -ano \\| findstr 7071$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }
