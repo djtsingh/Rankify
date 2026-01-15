@@ -1,0 +1,15 @@
+{
+  "name": "Rankify - Free SEO Tools",
+  "short_name": "Rankify",
+  "description": "Free, powerful SEO tools to analyze, optimize, and improve your website rankings",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1490df",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32"
+    }
+  ]
+}

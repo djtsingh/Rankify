@@ -67,8 +67,7 @@ export function Footer() {
           {/* Brand Section */}
           <div className="col-span-2 md:col-span-3 lg:col-span-4">
             <Link href="/" className="flex items-center gap-3 mb-4">
-              <img src="/rankify-logo.png" alt="Rankify" className="h-12 w-12 lg:h-14 lg:w-14" />
-              <span className="text-2xl lg:text-3xl font-bold text-white">Rankify</span>
+              <img src="/logo-footer.svg" alt="Rankify" className="h-12 w-auto lg:h-14 lg:w-auto" />
             </Link>
             <p className="text-sm lg:text-base text-slate-400 mb-6 max-w-sm">
               Dominate search rankings with AI-powered insights. Built for SEO professionals who demand excellence.

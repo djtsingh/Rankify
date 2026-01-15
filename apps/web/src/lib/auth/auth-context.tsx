@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { analytics } from '../analytics';
 
 // Auth Provider Types
 export type AuthProvider = 'google' | 'microsoft' | 'email';
@@ -168,12 +169,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: true,
         error: null,
       });
+
+      // Track successful sign in
+      analytics.trackEvent('login', {
+        category: 'authentication',
+        label: 'google',
+        custom_parameters: {
+          method: 'google',
+          user_id: user.id,
+          is_new_user: !existingUsers.find((u: User) => u.email === oauthData.email),
+        },
+      });
     } catch {
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: 'Failed to sign in with Google',
       }));
+
+      // Track sign in failure
+      analytics.trackEvent('login_error', {
+        category: 'authentication',
+        label: 'google',
+        custom_parameters: {
+          method: 'google',
+          error: 'oauth_failed',
+        },
+      });
     }
   }, []);
 
@@ -221,12 +243,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: true,
         error: null,
       });
+
+      // Track successful sign in
+      analytics.trackEvent('login', {
+        category: 'authentication',
+        label: 'microsoft',
+        custom_parameters: {
+          method: 'microsoft',
+          user_id: user.id,
+          is_new_user: !existingUsers.find((u: User) => u.email === oauthData.email),
+        },
+      });
     } catch {
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: 'Failed to sign in with Microsoft',
       }));
+
+      // Track sign in failure
+      analytics.trackEvent('login_error', {
+        category: 'authentication',
+        label: 'microsoft',
+        custom_parameters: {
+          method: 'microsoft',
+          error: 'oauth_failed',
+        },
+      });
     }
   }, []);
 
@@ -269,12 +312,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: true,
         error: null,
       });
+
+      // Track successful sign in
+      analytics.trackEvent('login', {
+        category: 'authentication',
+        label: 'email',
+        custom_parameters: {
+          method: 'email',
+          user_id: user.id,
+          is_new_user: false,
+        },
+      });
     } catch (err) {
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: err instanceof Error ? err.message : 'Failed to sign in',
       }));
+
+      // Track sign in failure
+      analytics.trackEvent('login_error', {
+        category: 'authentication',
+        label: 'email',
+        custom_parameters: {
+          method: 'email',
+          error: err instanceof Error ? err.message : 'unknown_error',
+        },
+      });
     }
   }, []);
 
@@ -343,12 +407,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: true,
         error: null,
       });
+
+      // Track successful signup
+      analytics.trackEvent('sign_up', {
+        category: 'authentication',
+        label: 'email',
+        custom_parameters: {
+          method: 'email',
+          user_id: newUser.id,
+        },
+      });
     } catch (err) {
       setState(prev => ({
         ...prev,
         isLoading: false,
         error: err instanceof Error ? err.message : 'Failed to create account',
       }));
+
+      // Track signup failure
+      analytics.trackEvent('sign_up_error', {
+        category: 'authentication',
+        label: 'email',
+        custom_parameters: {
+          method: 'email',
+          error: err instanceof Error ? err.message : 'unknown_error',
+        },
+      });
     }
   }, []);
 
@@ -367,6 +451,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
         isAuthenticated: false,
         error: null,
+      });
+
+      // Track sign out
+      analytics.trackEvent('logout', {
+        category: 'authentication',
+        label: 'user_signout',
       });
     } catch {
       setState(prev => ({

@@ -14,6 +14,19 @@ function getQueueClient() {
     return queueServiceClient.getQueueClient(QUEUE_NAME);
 }
 
+// Helper function to log audit events
+async function logAuditEvent(scanId: string, targetUrl: string, status: string, userId?: string, metadata?: any, processingTimeMs?: number, errorMessage?: string) {
+    try {
+        await prisma.$executeRaw`
+            INSERT INTO audit_logs (scan_id, target_url, status, user_id, metadata, processing_time_ms, error_message, created_at)
+            VALUES (${scanId}::uuid, ${targetUrl}, ${status}, ${userId ? userId : null}::uuid, ${metadata ? JSON.stringify(metadata) : null}::jsonb, ${processingTimeMs || null}, ${errorMessage || null}, NOW())
+        `;
+    } catch (error) {
+        console.error('Failed to log audit event:', error);
+        // Don't throw - we don't want logging failures to break the main flow
+    }
+}
+
 export async function createScan(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
     context.log('Create scan request received');
 
@@ -62,6 +75,13 @@ export async function createScan(request: HttpRequest, context: InvocationContex
 
         context.log(`Scan created in DB: ${scanId}`);
 
+        // Log audit event for scan creation
+        await logAuditEvent(scanId, normalizedUrl, 'CREATED', undefined, {
+            userAgent: request.headers.get('user-agent'),
+            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+            source: 'api'
+        });
+
         try {
             const queueClient = getQueueClient();
             const message = {
@@ -77,6 +97,15 @@ export async function createScan(request: HttpRequest, context: InvocationContex
         } catch (queueError) {
             context.error('Failed to queue job:', queueError);
             await prisma.$executeRaw`UPDATE scans SET status = 'failed', error_message = 'Failed to queue job', updated_at = NOW() WHERE id = ${scanId}::uuid`;
+
+            // Log audit event for scan failure
+            await logAuditEvent(scanId, normalizedUrl, 'FAILED', undefined, {
+                error: 'Failed to queue job',
+                userAgent: request.headers.get('user-agent'),
+                ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+                source: 'api'
+            }, undefined, 'Failed to queue job');
+
             throw queueError;
         }
 
@@ -205,6 +234,16 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
                 } : undefined
             }
         };
+
+        // Log audit event for scan retrieval
+        await logAuditEvent(scanId, scan.url, 'VIEWED', undefined, {
+            status: scan.status,
+            hasResults: !!scan.metrics,
+            issueCount: issues.length,
+            userAgent: request.headers.get('user-agent'),
+            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+            source: 'api'
+        });
 
         return {
             status: 200,

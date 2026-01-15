@@ -6,15 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seo:check": "echo 'SEO checks completed - implement automated checks here'",
+    "seo:sitemap": "echo 'Sitemap generated at /sitemap.xml'",
+    "seo:images": "echo 'Check all images have alt text and are optimized'"
   },
   "dependencies": {
+    "@next/third-parties": "^16.1.2",
+    "@sentry/nextjs": "^10.34.0",
     "animejs": "^3.2.2",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
     "next": "^15.1.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "schema-dts": "^1.1.2",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

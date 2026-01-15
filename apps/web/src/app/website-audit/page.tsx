@@ -5,9 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Navigation } from "@/components/layout/Navigation";
 import { Footer } from "@/components/layout/Footer";
 import { useAudit } from "@/lib/hooks/useAudit";
-import { 
-  Chrome, FileText, Link2, Target, CheckCircle2, AlertCircle, 
-  Clock, Zap, ArrowRight, Lock, Unlock, Sparkles, Globe, 
+import { StructuredData } from "@/components/seo/StructuredData";
+import {
+  Chrome, FileText, Link2, Target, CheckCircle2, AlertCircle,
+  Clock, Zap, ArrowRight, Lock, Unlock, Sparkles, Globe,
   Search, BarChart3, TrendingUp, Shield, Eye, Layers,
   AlertTriangle, CheckCheck, XCircle, ArrowDown,
   Download, Share2, Star, Users, Timer, Gauge, Activity, Cpu,
@@ -1288,6 +1289,38 @@ function WebsiteAuditContent() {
       </section>
 
       <Footer />
+
+      {/* Structured Data for SEO */}
+      <StructuredData
+        type="breadcrumb"
+        data={[
+          { name: 'Home', url: 'https://www.rankify.page' },
+          { name: 'Website Audit', url: 'https://www.rankify.page/website-audit' },
+        ]}
+      />
+
+      <StructuredData
+        type="software"
+        data={{
+          name: 'Rankify Website Audit Tool',
+          applicationCategory: 'WebApplication',
+          operatingSystem: 'Web Browser',
+          offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'USD',
+          },
+          description: 'Free comprehensive website SEO audit and analysis tool.',
+          featureList: [
+            'SEO Score Analysis',
+            'Meta Tags Check',
+            'Performance Audit',
+            'Mobile Friendliness',
+            'Security Check',
+            'Content Analysis'
+          ],
+        }}
+      />
     </div>
   );
 }

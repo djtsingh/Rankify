@@ -224,7 +224,7 @@ export function AuthModal({ isOpen, onClose, defaultView = 'signin' }: AuthModal
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
-            <img src="/rankify-logo.png" alt="Rankify" className="w-8 h-8" />
+            <img src="/logo-horizontal.svg" alt="Rankify" className="w-8 h-8" />
           </div>
           <h2 className="text-xl font-bold text-white">
             {view === 'signin' && 'Welcome back'}

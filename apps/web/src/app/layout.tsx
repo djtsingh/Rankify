@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { satoshi } from "@/fonts";
 import { AuthProvider } from "@/lib/auth/auth-context";
+import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 
 // Using Satoshi for all text site-wide
 
@@ -86,12 +89,15 @@ export const metadata: Metadata = {
     images: ['/twitter-image.png'],
   },
   
-  // Favicon
+  // Favicon and icons following Google's best practices
   icons: {
-    icon: '/favicon.png',
-    shortcut: '/favicon.png',
-    apple: '/favicon.png',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
   },
+
+  // PWA manifest
+  manifest: '/manifest.json',
   
   // Verification for search engines
   verification: {
@@ -124,15 +130,29 @@ export default function RootLayout({
         {/* Preconnect to critical domains for faster resource loading */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Favicon - configured in metadata export above */}
+        
+        {/* Additional favicon support for better browser compatibility */}
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <meta name="theme-color" content="#1490df" />
+        <meta name="msapplication-TileColor" content="#1490df" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
       <body 
         className="font-sans antialiased bg-black"
         suppressHydrationWarning
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AnalyticsProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </AnalyticsProvider>
+        
+        {/* Optimized Analytics Loading */}
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA4_ID || 'G-XXXXXXXXXX'} />
+        <Script
+          src={`https://www.clarity.ms/tag/${process.env.NEXT_PUBLIC_CLARITY_ID || 'XXXXXXXXXX'}`}
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

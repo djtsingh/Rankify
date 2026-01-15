@@ -111,8 +111,7 @@ export function Navigation({ variant = 'default', animated = false }: Navigation
         <div className="flex items-center justify-between py-3 px-6">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <img src="/rankify-logo.png" alt="Rankify" className="h-8 w-8 lg:h-10 lg:w-10" />
-            <span className="text-lg md:text-xl lg:text-2xl font-bold text-white">rankify</span>
+            <img src="/logo-horizontal.svg" alt="Rankify" className="h-8 w-auto lg:h-12 lg:w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -122,13 +121,13 @@ export function Navigation({ variant = 'default', animated = false }: Navigation
               onMouseEnter={() => setIsFeaturesDropdownOpen(true)}
               onMouseLeave={() => setIsFeaturesDropdownOpen(false)}
             >
-              <a href="/#features" className="flex items-center gap-1.5 text-sm lg:text-base font-medium text-slate-300 hover:text-coral hover:bg-zinc-800/50 transition-all rounded-lg px-3 py-2 lg:px-4 lg:py-2.5 group" aria-label="Navigate to features section">
+              <div className="flex items-center gap-1.5 text-sm lg:text-base font-medium text-slate-300 hover:text-coral hover:bg-zinc-800/50 transition-all rounded-lg px-3 py-2 lg:px-4 lg:py-2.5 group" aria-label="Navigate to features section">
                 <Package className="w-4 h-4 lg:w-5 lg:h-5 group-hover:scale-110 transition-transform" />
                 <span>Features</span>
                 <svg className={`w-3 h-3 transition-transform ${isFeaturesDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-              </a>
+              </div>
               
               {/* Features Dropdown */}
               <div className={`absolute top-full left-0 mt-2 w-[620px] bg-zinc-900/95 backdrop-blur-xl border border-zinc-800 rounded-2xl shadow-2xl shadow-black/50 transition-all duration-300 ${isFeaturesDropdownOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}`}>
@@ -359,8 +358,7 @@ export function Navigation({ variant = 'default', animated = false }: Navigation
         {/* Menu Header */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-800">
           <div className="flex items-center gap-2">
-            <img src="/rankify-logo.png" alt="Rankify" className="h-7 w-7" />
-            <span className="text-lg font-bold text-white">rankify</span>
+            <img src="/logo-horizontal.svg" alt="Rankify" className="h-7 w-auto" />
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}

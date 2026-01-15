@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { Footer } from "@/components/layout/Footer";
 import { Navigation } from "@/components/layout/Navigation";
+import { StructuredData } from "@/components/seo/StructuredData";
 
 // ============================================
 // ANIMATED COUNTER HOOK - Counts from 0 on visibility
@@ -702,6 +703,56 @@ export default function Home() {
 
       {/* Footer - Using shared component */}
       <Footer />
+
+      {/* Structured Data for SEO */}
+      <StructuredData
+        type="organization"
+        data={{
+          name: 'Rankify',
+          url: 'https://www.rankify.page',
+          logo: 'https://www.rankify.page/logo-horizontal.svg',
+          description: 'Free, powerful SEO tools to analyze, optimize, and improve your website rankings.',
+          foundingDate: '2024',
+          contactPoint: {
+            '@type': 'ContactPoint',
+            contactType: 'customer service',
+            email: 'support@rankify.page',
+          },
+          sameAs: [
+            'https://twitter.com/rankify',
+            'https://github.com/rankify',
+          ],
+        }}
+      />
+
+      <StructuredData
+        type="website"
+        data={{
+          name: 'Rankify',
+          url: 'https://www.rankify.page',
+          description: 'Free SEO tools for website optimization and analysis.',
+          potentialAction: {
+            '@type': 'SearchAction',
+            target: 'https://www.rankify.page/website-audit?url={search_term_string}',
+            'query-input': 'required name=search_term_string',
+          },
+        }}
+      />
+
+      <StructuredData
+        type="software"
+        data={{
+          name: 'Rankify SEO Tools',
+          applicationCategory: 'WebApplication',
+          operatingSystem: 'Web Browser',
+          offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'USD',
+          },
+          description: 'Comprehensive SEO analysis and optimization tools.',
+        }}
+      />
     </div>
   );
 }

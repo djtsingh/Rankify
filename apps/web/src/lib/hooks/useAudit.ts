@@ -13,6 +13,7 @@ import {
   type ScanStatus 
 } from '@/lib/api/audit';
 import { validateAndNormalizeUrl } from '@/lib/utils/url';
+import { analytics } from '@/lib/analytics';
 
 export type AuditState = 'idle' | 'validating' | 'scanning' | 'polling' | 'complete' | 'error';
 
@@ -29,6 +30,7 @@ export interface UseAuditReturn {
   startScan: (url: string) => Promise<void>;
   reset: () => void;
   retry: () => void;
+  viewFullReport: () => void;
   
   // Helpers
   isLoading: boolean;
@@ -169,6 +171,16 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
       
       if (pollingAborted.current) return;
 
+      // Track audit start
+      analytics.trackEvent('audit_start', {
+        category: 'engagement',
+        label: normalizedUrl,
+        custom_parameters: {
+          scan_id: response.scan_id,
+          url: normalizedUrl,
+        },
+      });
+
       setScanId(response.scan_id);
       updateUrlParams(response.scan_id, normalizedUrl);
 
@@ -196,6 +208,17 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
       setCurrentStep('Complete!');
       setResults(scanResults);
       setState('complete');
+
+      // Track successful audit completion
+      analytics.trackEvent('audit_complete', {
+        category: 'engagement',
+        label: normalizedUrl,
+        custom_parameters: {
+          scan_id: response.scan_id,
+          url: normalizedUrl,
+          score: scanResults?.score,
+        },
+      });
       
       // Cache results for the results page to use immediately
       // This prevents the results page from re-fetching
@@ -213,8 +236,19 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
     } catch (err) {
       clearProgress();
       setState('error');
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
       console.error('Audit scan error:', err);
+
+      // Track audit failure
+      analytics.trackEvent('audit_error', {
+        category: 'engagement',
+        label: lastUrl || url,
+        custom_parameters: {
+          error_message: errorMessage,
+          url: lastUrl || url,
+        },
+      });
     }
   }, [progress, simulateProgress, clearProgress, updateUrlParams]);
 
@@ -235,15 +269,33 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
   }, [clearProgress, clearUrlParams]);
 
   /**
-   * Retry last scan
+   * Retry the last scan
    */
   const retry = useCallback(() => {
     if (lastUrl) {
       startScan(lastUrl);
-    } else {
-      reset();
     }
-  }, [lastUrl, startScan, reset]);
+  }, [lastUrl, startScan]);
+
+  /**
+   * Navigate to full report page and track the event
+   */
+  const viewFullReport = useCallback(() => {
+    if (scanId && lastUrl) {
+      // Track view full report event
+      analytics.trackEvent('view_full_report', {
+        category: 'engagement',
+        label: lastUrl,
+        custom_parameters: {
+          scan_id: scanId,
+          url: lastUrl,
+        },
+      });
+
+      // Navigate to results page
+      router.push(`/website-audit/results?scan=${scanId}&url=${encodeURIComponent(lastUrl)}`);
+    }
+  }, [scanId, lastUrl, router]);
 
   /**
    * Auto-load scan if scanId in URL
@@ -304,6 +356,7 @@ export function useAudit(initialScanId?: string | null): UseAuditReturn {
     startScan,
     reset,
     retry,
+    viewFullReport,
     isLoading: ['validating', 'scanning', 'polling'].includes(state),
     canScan: state === 'idle' || state === 'complete' || state === 'error',
   };

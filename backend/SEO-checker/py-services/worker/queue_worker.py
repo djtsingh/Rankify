@@ -197,6 +197,31 @@ class DatabaseClient:
             ''', ('failed', error, scan_id))
             conn.commit()
         logger.info(f"Updated scan {scan_id} with error: {error}")
+    
+    def log_audit_event(self, scan_id: str, target_url: str, status: str, user_id: Optional[str] = None, 
+                       metadata: Optional[dict] = None, processing_time_ms: Optional[int] = None, 
+                       error_message: Optional[str] = None):
+        """Log audit event to analytics table"""
+        try:
+            conn = self.connect()
+            with conn.cursor() as cur:
+                cur.execute('''
+                    INSERT INTO audit_logs (scan_id, target_url, status, user_id, metadata, processing_time_ms, error_message, created_at)
+                    VALUES (%s::uuid, %s, %s, %s::uuid, %s, %s, %s, NOW())
+                ''', (
+                    scan_id,
+                    target_url,
+                    status,
+                    user_id,
+                    json.dumps(metadata) if metadata else None,
+                    processing_time_ms,
+                    error_message
+                ))
+                conn.commit()
+            logger.info(f"Logged audit event: {scan_id} - {status}")
+        except Exception as e:
+            logger.error(f"Failed to log audit event for scan {scan_id}: {e}")
+            # Don't raise - logging failures shouldn't break the main flow
 
 
 class SEOScanner:
@@ -445,9 +470,30 @@ class QueueWorker:
             
             self.db.update_scan_status(scan_id, 'processing')
             
+            # Start timing the scan
+            scan_start_time = time.time()
+            
             results = await self.scanner.scan(url)
             
+            # Calculate processing time
+            processing_time_ms = int((time.time() - scan_start_time) * 1000)
+            
             self.db.update_scan_results(scan_id, results)
+            
+            # Log successful completion
+            self.db.log_audit_event(
+                scan_id=scan_id,
+                target_url=url,
+                status='COMPLETED',
+                processing_time_ms=processing_time_ms,
+                metadata={
+                    'overall_score': results.get('overallScore'),
+                    'category_scores': results.get('categoryScores'),
+                    'load_time_ms': results.get('loadTime'),
+                    'page_size_bytes': results.get('pageSize'),
+                    'source': 'worker'
+                }
+            )
             
             self.queue_client.delete_message(message)
             logger.info(f"Successfully processed scan {scan_id}")
@@ -460,6 +506,14 @@ class QueueWorker:
             scan_id = job.get('scanId')
             if scan_id:
                 self.db.update_scan_error(scan_id, error_msg)
+                # Log failed scan
+                self.db.log_audit_event(
+                    scan_id=scan_id,
+                    target_url=job.get('url', ''),
+                    status='FAILED',
+                    error_message=error_msg,
+                    metadata={'source': 'worker', 'error_type': 'http_error'}
+                )
             
             self.queue_client.delete_message(message)
             
@@ -476,6 +530,14 @@ class QueueWorker:
                 logger.error(f"Max retries reached for message {message_id}")
                 if scan_id:
                     self.db.update_scan_error(scan_id, f"{error_msg} (after {Config.MAX_RETRIES} attempts)")
+                    # Log failed scan after max retries
+                    self.db.log_audit_event(
+                        scan_id=scan_id,
+                        target_url=job.get('url', ''),
+                        status='FAILED',
+                        error_message=f"{error_msg} (after {Config.MAX_RETRIES} attempts)",
+                        metadata={'source': 'worker', 'error_type': 'request_error', 'retries': Config.MAX_RETRIES}
+                    )
                 self.queue_client.delete_message(message)
                 
         except Exception as e:
@@ -488,6 +550,14 @@ class QueueWorker:
                 scan_id = job.get('scanId')
                 if scan_id:
                     self.db.update_scan_error(scan_id, error_msg)
+                    # Log failed scan
+                    self.db.log_audit_event(
+                        scan_id=scan_id,
+                        target_url=job.get('url', ''),
+                        status='FAILED',
+                        error_message=error_msg,
+                        metadata={'source': 'worker', 'error_type': 'unexpected_error'}
+                    )
             except:
                 pass
             

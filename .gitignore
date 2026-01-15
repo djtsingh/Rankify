@@ -58,3 +58,6 @@ misc/
 *.temp
 func-output.txt
 "py env info"
+apps/web/SEO_SYSTEM.md
+apps/web/sentry-rules.md
+backend/SEO-checker/analytics/README.md
