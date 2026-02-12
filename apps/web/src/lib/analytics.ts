@@ -51,31 +51,38 @@ export interface EventParams {
 // Google Analytics 4 Implementation
 class GA4Analytics {
   private initialized = false;
+  private initRetries = 0;
+  private maxRetries = 10;
 
   init() {
     if (this.initialized || typeof window === 'undefined') return;
 
-    // Script is now loaded via @next/third-parties GoogleAnalytics in layout.tsx
-    // Just initialize gtag configuration
-    if (window.gtag) {
-      window.gtag('config', ANALYTICS_CONFIG.GA4_ID, {
-        send_page_view: false, // We'll handle page views manually
-        enhanced_measurement: {
-          scroll: true,  // Automatically tracks 90% scroll depth
-          clicks: true,  // Automatically tracks outbound clicks
-          file_downloads: true, // Automatically tracks file downloads
-        },
-        custom_map: {
-          dimension1: 'user_type',
-          dimension2: 'subscription_tier',
-          dimension3: 'feature_used',
-        },
-        custom_parameters: {
-          user_id: null,
-          user_properties: {},
-        },
-      });
+    // Ensure dataLayer is initialized (required for gtag)
+    window.dataLayer = window.dataLayer || [];
+
+    // Check if gtag is available (loaded by @next/third-parties GoogleAnalytics)
+    if (typeof window.gtag === 'function') {
+      this.configure();
+    } else {
+      // Retry after a short delay - script might still be loading
+      if (this.initRetries < this.maxRetries) {
+        this.initRetries++;
+        setTimeout(() => this.init(), 100);
+      }
     }
+  }
+
+  private configure() {
+    if (this.initialized) return;
+
+    window.gtag('config', ANALYTICS_CONFIG.GA4_ID, {
+      send_page_view: false, // We'll handle page views manually
+      custom_map: {
+        dimension1: 'user_type',
+        dimension2: 'subscription_tier',
+        dimension3: 'feature_used',
+      },
+    });
 
     this.initialized = true;
   }
@@ -247,5 +254,6 @@ declare global {
   interface Window {
     gtag: (...args: any[]) => void;
     clarity: (...args: any[]) => void;
+    dataLayer: any[];
   }
 }
