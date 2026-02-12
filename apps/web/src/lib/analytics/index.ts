@@ -76,7 +76,6 @@ export interface AnalyticsUser {
 
 declare global {
   interface Window {
-    dataLayer: unknown[];
     gtag: (...args: unknown[]) => void;
     clarity: (...args: unknown[]) => void;
   }
@@ -104,12 +103,14 @@ class Analytics {
     }
 
     // Ensure dataLayer exists
-    window.dataLayer = window.dataLayer || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).dataLayer = (window as any).dataLayer || [];
 
     // Define gtag function if not exists
     if (typeof window.gtag !== 'function') {
       window.gtag = function gtag(...args: unknown[]) {
-        window.dataLayer.push(args);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).dataLayer.push(args);
       };
     }
 

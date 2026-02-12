@@ -3,7 +3,7 @@
  * Comprehensive analytics implementation for GA4, user behavior tracking, and performance monitoring
  */
 
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 
 // Analytics Configuration
 export const ANALYTICS_CONFIG = {
@@ -58,7 +58,8 @@ class GA4Analytics {
     if (this.initialized || typeof window === 'undefined') return;
 
     // Ensure dataLayer is initialized (required for gtag)
-    window.dataLayer = window.dataLayer || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).dataLayer = (window as any).dataLayer || [];
 
     // Check if gtag is available (loaded by @next/third-parties GoogleAnalytics)
     if (typeof window.gtag === 'function') {
@@ -252,8 +253,7 @@ export function useAnalytics() {
 // Global type declarations
 declare global {
   interface Window {
-    gtag: (...args: any[]) => void;
-    clarity: (...args: any[]) => void;
-    dataLayer: any[];
+    gtag: (...args: unknown[]) => void;
+    clarity: (...args: unknown[]) => void;
   }
 }
