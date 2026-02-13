@@ -14,8 +14,9 @@
 // Configuration
 // ============================================================================
 
-export const GA4_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA4_ID || '';
-export const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_ID || '';
+// Hardcoded for static export reliability
+export const GA4_MEASUREMENT_ID = 'G-B4VYMCS0Z5';
+export const CLARITY_PROJECT_ID = 'v0api0xc0z';
 
 export const ANALYTICS_CONFIG = {
   GA4_ID: GA4_MEASUREMENT_ID,
@@ -97,10 +98,6 @@ class Analytics {
   init(): void {
     if (this.initialized) return;
     if (typeof window === 'undefined') return;
-    if (!GA4_MEASUREMENT_ID || GA4_MEASUREMENT_ID === 'G-XXXXXXXXXX') {
-      this.log('GA4 Measurement ID not configured');
-      return;
-    }
 
     // Ensure dataLayer exists
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

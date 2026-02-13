@@ -8,11 +8,6 @@ import { CLARITY_PROJECT_ID } from './index';
  * Loads Clarity for heatmaps and session recordings
  */
 export function ClarityScript() {
-  // Don't render if no project ID
-  if (!CLARITY_PROJECT_ID || CLARITY_PROJECT_ID === 'XXXXXXXXXX') {
-    return null;
-  }
-
   return (
     <Script
       id="clarity-script"

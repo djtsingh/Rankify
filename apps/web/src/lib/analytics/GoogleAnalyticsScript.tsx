@@ -8,11 +8,6 @@ import { GA4_MEASUREMENT_ID, analytics } from './index';
  * Loads the gtag.js script and initializes analytics
  */
 export function GoogleAnalyticsScript() {
-  // Don't render if no measurement ID
-  if (!GA4_MEASUREMENT_ID || GA4_MEASUREMENT_ID === 'G-XXXXXXXXXX') {
-    return null;
-  }
-
   return (
     <>
       {/* Load gtag.js */}

@@ -5,10 +5,10 @@
 
 import { useCallback } from 'react';
 
-// Analytics Configuration
+// Analytics Configuration - Hardcoded for static export reliability
 export const ANALYTICS_CONFIG = {
-  GA4_ID: process.env.NEXT_PUBLIC_GA4_ID || 'G-XXXXXXXXXX', // Replace with actual GA4 ID
-  CLARITY_ID: process.env.NEXT_PUBLIC_CLARITY_ID || 'XXXXXXXXXX', // Replace with actual Clarity ID
+  GA4_ID: 'G-B4VYMCS0Z5',
+  CLARITY_ID: 'v0api0xc0z',
   SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN, // For error tracking
 };
 

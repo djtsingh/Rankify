@@ -3,8 +3,11 @@ import "./globals.css";
 import { satoshi } from "@/fonts";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import Script from "next/script";
+
+// Google Analytics Measurement ID
+const GA_MEASUREMENT_ID = 'G-B4VYMCS0Z5';
+const CLARITY_ID = 'v0api0xc0z';
 
 // Using Satoshi for all text site-wide
 
@@ -127,9 +130,30 @@ export default function RootLayout({
       className={satoshi.variable}
     >
       <head>
+        {/* Google Analytics - Official Manual Installation */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${GA_MEASUREMENT_ID}', {
+                page_path: window.location.pathname,
+              });
+            `,
+          }}
+        />
+        
         {/* Preconnect to critical domains for faster resource loading */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
         
         {/* Additional favicon support for better browser compatibility */}
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -147,9 +171,6 @@ export default function RootLayout({
           </AuthProvider>
         </AnalyticsProvider>
         
-        {/* Google Analytics - loaded by @next/third-parties */}
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA4_ID || 'G-XXXXXXXXXX'} />
-        
         {/* Microsoft Clarity - heatmaps and session recording */}
         <Script
           id="clarity-script"
@@ -160,7 +181,7 @@ export default function RootLayout({
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
                 t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
                 y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-              })(window, document, "clarity", "script", "${process.env.NEXT_PUBLIC_CLARITY_ID || 'XXXXXXXXXX'}");
+              })(window, document, "clarity", "script", "${CLARITY_ID}");
             `
           }}
         />
