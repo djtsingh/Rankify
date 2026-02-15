@@ -159,7 +159,7 @@ curl https://rankify-v1-src.azurewebsites.net/api/health
 
 ### Check Worker Logs
 ```bash
-az containerapp logs show --name seo-worker --resource-group rankify-v1
+az containerapp logs show --name seo-worker --resource-group rankify
 ```
 
 ### Check Queue Messages

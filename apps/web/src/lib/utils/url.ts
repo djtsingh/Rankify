@@ -40,7 +40,7 @@ export function validateAndNormalizeUrl(input: string): URLValidationResult {
     if (!parsed.hostname || parsed.hostname.length < 3) {
       return {
         valid: false,
-        error: 'Invalid domain name',
+        error: 'Invalid domain name - hostname is too short',
       };
     }
 
@@ -54,10 +54,22 @@ export function validateAndNormalizeUrl(input: string): URLValidationResult {
 
     // Check for valid TLD (basic check)
     const parts = parsed.hostname.split('.');
-    if (parts.length < 2) {
+    
+    // Allow IP addresses (which have 4 numeric parts)
+    const isIPAddress = parts.length === 4 && parts.every(p => !isNaN(Number(p)) && Number(p) >= 0 && Number(p) <= 255);
+    
+    if (!isIPAddress && parts.length < 2) {
       return {
         valid: false,
-        error: 'Invalid domain format',
+        error: `Invalid domain format. Expected format: example.com (got: ${parsed.hostname})`,
+      };
+    }
+    
+    // Check that the TLD is at least 2 characters (e.g., .me, .io, .com)
+    if (!isIPAddress && parts[parts.length - 1].length < 2) {
+      return {
+        valid: false,
+        error: 'Invalid top-level domain (TLD)',
       };
     }
 
