@@ -1,5 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 
+// Required for tracking Next.js App Router navigation
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+
 Sentry.init({
   dsn: "https://6dbb91b7a66cb572becc21b760e98257@o4510714371440640.ingest.de.sentry.io/4510714378125392",
 
