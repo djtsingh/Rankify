@@ -3,6 +3,7 @@ import "./globals.css";
 import { satoshi } from "@/fonts";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
+import CookieConsent from "@/components/ui/CookieConsent";
 import Script from "next/script";
 
 // Google Analytics Measurement ID
@@ -169,6 +170,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
           </AuthProvider>
+          <CookieConsent />
         </AnalyticsProvider>
         
         {/* Microsoft Clarity - heatmaps and session recording */}

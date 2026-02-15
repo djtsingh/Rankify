@@ -1,14 +1,17 @@
 "use client";
 
 import PageLayout from "@/components/layout/PageLayout";
-import { Mail, MessageSquare, MapPin, Clock, Send, Phone, Globe, Twitter, Linkedin, Github } from "lucide-react";
+import { Mail, MapPin, Clock, Send, Globe } from "lucide-react";
 import { useState } from "react";
+
+// Contact form handler - sends to our API or external service
+// For now, using mailto fallback until email service is configured
+const CONTACT_EMAIL = "contact@rankify.page";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    company: "",
     subject: "",
     message: "",
     inquiryType: "general",
@@ -21,24 +24,37 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSubmitting(false);
-    setSubmitStatus("success");
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setFormData({
-        name: "",
-        email: "",
-        company: "",
-        subject: "",
-        message: "",
-        inquiryType: "general",
-      });
-      setSubmitStatus("idle");
-    }, 3000);
+    try {
+      // Option 1: Open email client with pre-filled message
+      const subject = encodeURIComponent(`[${formData.inquiryType}] ${formData.subject}`);
+      const body = encodeURIComponent(
+        `Name: ${formData.name}\nEmail: ${formData.email}\nInquiry Type: ${formData.inquiryType}\n\nMessage:\n${formData.message}`
+      );
+      
+      window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+      
+      // Mark as success after a short delay
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSubmitStatus("success");
+        
+        // Reset form after 3 seconds
+        setTimeout(() => {
+          setFormData({
+            name: "",
+            email: "",
+            subject: "",
+            message: "",
+            inquiryType: "general",
+          });
+          setSubmitStatus("idle");
+        }, 3000);
+      }, 500);
+      
+    } catch {
+      setIsSubmitting(false);
+      setSubmitStatus("error");
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -51,53 +67,46 @@ export default function ContactPage() {
   return (
     <PageLayout
       title="Contact Us"
-      description="Have questions? We're here to help. Reach out to our team and we'll get back to you within 24 hours."
+      description="Have questions? We're here to help."
     >
       <div className="space-y-12">
         {/* Contact Methods */}
-        <section className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-card border border-border rounded-xl p-6 hover:border-brand-primary/50 transition-all group">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-primary to-brand-primary-dark text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+        <section className="grid md:grid-cols-3 gap-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-indigo-500/50 transition-all">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center mb-4">
               <Mail className="w-6 h-6" />
             </div>
-            <h3 className="font-bold mb-2">Email Us</h3>
-            <p className="text-sm text-muted-foreground mb-3">General inquiries and support</p>
-            <a href="mailto:support@rankify.page" className="text-brand-primary hover:underline text-sm font-medium">
-              support@rankify.page
+            <h3 className="font-bold text-white mb-2">Email Us</h3>
+            <p className="text-sm text-slate-400 mb-3">General inquiries and support</p>
+            <a href="mailto:contact@rankify.page" className="text-indigo-400 hover:underline text-sm font-medium">
+              contact@rankify.page
             </a>
           </div>
 
-          <div className="bg-card border border-border rounded-xl p-6 hover:border-brand-secondary/50 transition-all group">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-secondary to-brand-secondary-dark text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <MessageSquare className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold mb-2">Live Chat</h3>
-            <p className="text-sm text-muted-foreground mb-3">Instant support (Mon-Fri 9am-6pm PT)</p>
-            <button className="text-brand-secondary hover:underline text-sm font-medium">
-              Start Chat →
-            </button>
-          </div>
-
-          <div className="bg-card border border-border rounded-xl p-6 hover:border-brand-accent/50 transition-all group">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-accent to-brand-accent-dark text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Phone className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold mb-2">Call Us</h3>
-            <p className="text-sm text-muted-foreground mb-3">Enterprise customers only</p>
-            <a href="tel:+14155551234" className="text-brand-accent hover:underline text-sm font-medium">
-              +1 (415) 555-1234
-            </a>
-          </div>
-
-          <div className="bg-card border border-border rounded-xl p-6 hover:border-brand-highlight/50 transition-all group">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-highlight to-brand-highlight-dark text-white flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-emerald-500/50 transition-all">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center mb-4">
               <Clock className="w-6 h-6" />
             </div>
-            <h3 className="font-bold mb-2">Response Time</h3>
-            <p className="text-sm text-muted-foreground mb-3">We aim to respond within</p>
-            <p className="text-brand-highlight text-sm font-medium">
-              24 hours or less
-            </p>
+            <h3 className="font-bold text-white mb-2">Response Time</h3>
+            <p className="text-sm text-slate-400 mb-3">We aim to respond within</p>
+            <p className="text-emerald-400 text-sm font-medium">48 hours</p>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:border-amber-500/50 transition-all">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center mb-4">
+              <MapPin className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-white mb-2">Location</h3>
+            <p className="text-sm text-slate-400 mb-3">Mumbai, India</p>
+            <a
+              href="https://maps.google.com/?q=IThink+by+Lodha+Dombivli+Mumbai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-amber-400 hover:underline text-sm font-medium inline-flex items-center gap-1"
+            >
+              <Globe className="w-3 h-3" />
+              View on Map
+            </a>
           </div>
         </section>
 
@@ -105,17 +114,17 @@ export default function ContactPage() {
         <section className="grid lg:grid-cols-3 gap-8">
           {/* Form */}
           <div className="lg:col-span-2">
-            <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">Send Us a Message</h2>
-              <p className="text-muted-foreground mb-6">
-                Fill out the form below and our team will get back to you as soon as possible.
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8">
+              <h2 className="text-2xl font-bold text-white mb-2">Send Us a Message</h2>
+              <p className="text-slate-400 mb-6">
+                Fill out the form below and we&apos;ll get back to you.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Inquiry Type */}
                 <div>
-                  <label htmlFor="inquiryType" className="block text-sm font-semibold mb-2">
-                    What can we help you with? <span className="text-red-500">*</span>
+                  <label htmlFor="inquiryType" className="block text-sm font-semibold text-white mb-2">
+                    What can we help you with?
                   </label>
                   <select
                     id="inquiryType"
@@ -123,14 +132,13 @@ export default function ContactPage() {
                     value={formData.inquiryType}
                     onChange={handleChange}
                     required
-                    className="w-full bg-background border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   >
                     <option value="general">General Inquiry</option>
-                    <option value="sales">Sales & Pricing</option>
                     <option value="support">Technical Support</option>
+                    <option value="feedback">Product Feedback</option>
                     <option value="partnership">Partnership Opportunity</option>
                     <option value="press">Press & Media</option>
-                    <option value="feedback">Product Feedback</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
@@ -138,8 +146,8 @@ export default function ContactPage() {
                 {/* Name & Email */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-semibold mb-2">
-                      Your Name <span className="text-red-500">*</span>
+                    <label htmlFor="name" className="block text-sm font-semibold text-white mb-2">
+                      Your Name <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -149,13 +157,13 @@ export default function ContactPage() {
                       onChange={handleChange}
                       required
                       placeholder="John Doe"
-                      className="w-full bg-background border border-border rounded-lg px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-semibold mb-2">
-                      Email Address <span className="text-red-500">*</span>
+                    <label htmlFor="email" className="block text-sm font-semibold text-white mb-2">
+                      Email Address <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="email"
@@ -164,50 +172,33 @@ export default function ContactPage() {
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      placeholder="john@company.com"
-                      className="w-full bg-background border border-border rounded-lg px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="john@example.com"
+                      className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
                 </div>
 
-                {/* Company & Subject */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="company" className="block text-sm font-semibold mb-2">
-                      Company Name
-                    </label>
-                    <input
-                      type="text"
-                      id="company"
-                      name="company"
-                      value={formData.company}
-                      onChange={handleChange}
-                      placeholder="Acme Inc."
-                      className="w-full bg-background border border-border rounded-lg px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="subject" className="block text-sm font-semibold mb-2">
-                      Subject <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="subject"
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      required
-                      placeholder="How can we help?"
-                      className="w-full bg-background border border-border rounded-lg px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
+                {/* Subject */}
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-semibold text-white mb-2">
+                    Subject <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                    placeholder="How can we help?"
+                    className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
                 </div>
 
                 {/* Message */}
                 <div>
-                  <label htmlFor="message" className="block text-sm font-semibold mb-2">
-                    Message <span className="text-red-500">*</span>
+                  <label htmlFor="message" className="block text-sm font-semibold text-white mb-2">
+                    Message <span className="text-red-400">*</span>
                   </label>
                   <textarea
                     id="message"
@@ -217,7 +208,7 @@ export default function ContactPage() {
                     required
                     rows={6}
                     placeholder="Tell us more about your inquiry..."
-                    className="w-full bg-background border border-border rounded-lg px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                    className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
                   />
                 </div>
 
@@ -226,16 +217,16 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting || submitStatus === "success"}
-                    className="rankify-button w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25"
                   >
                     {isSubmitting ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Sending...
+                        Opening Email...
                       </>
                     ) : submitStatus === "success" ? (
                       <>
-                        ✓ Message Sent!
+                        ✓ Email Client Opened!
                       </>
                     ) : (
                       <>
@@ -246,8 +237,14 @@ export default function ContactPage() {
                   </button>
 
                   {submitStatus === "success" && (
-                    <p className="mt-4 text-sm text-green-400">
-                      Thank you for reaching out! We'll respond within 24 hours.
+                    <p className="mt-4 text-sm text-emerald-400">
+                      Your email client should have opened. If not, email us directly at contact@rankify.page
+                    </p>
+                  )}
+
+                  {submitStatus === "error" && (
+                    <p className="mt-4 text-sm text-red-400">
+                      Something went wrong. Please email us directly at contact@rankify.page
                     </p>
                   )}
                 </div>
@@ -258,151 +255,64 @@ export default function ContactPage() {
           {/* Sidebar Info */}
           <div className="space-y-6">
             {/* Office Location */}
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-secondary to-brand-secondary-dark text-white flex items-center justify-center">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <h3 className="font-bold text-lg">Office Location</h3>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">Rankify Inc</strong><br />
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <h3 className="font-bold text-white text-lg mb-4">Office Address</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                <strong className="text-white">Rankify</strong><br />
                 IThink by Lodha<br />
                 Kalyan - Shilphata Road<br />
                 Opp Xperia Mall, Dombivli<br />
                 Mumbai, MH 421204<br />
                 India
               </p>
-              <a
-                href="https://maps.google.com/?q=IThink+by+Lodha+Dombivli+Mumbai"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-brand-secondary hover:underline mt-4"
-              >
-                <Globe className="w-4 h-4" />
-                View on Map
-              </a>
             </div>
 
-            {/* Social Media */}
-            <div className="bg-card border border-border rounded-xl p-6">
-              <h3 className="font-bold text-lg mb-4">Follow Us</h3>
-              <div className="space-y-3">
-                <a
-                  href="https://twitter.com/rankify"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-muted-foreground hover:text-brand-primary transition-colors group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-muted group-hover:bg-brand-primary/10 flex items-center justify-center transition-colors">
-                    <Twitter className="w-4 h-4" />
-                  </div>
-                  <span>Twitter/X</span>
-                </a>
-                <a
-                  href="https://linkedin.com/company/rankify"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-muted-foreground hover:text-brand-primary transition-colors group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-muted group-hover:bg-brand-primary/10 flex items-center justify-center transition-colors">
-                    <Linkedin className="w-4 h-4" />
-                  </div>
-                  <span>LinkedIn</span>
-                </a>
-                <a
-                  href="https://github.com/rankify"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-muted-foreground hover:text-brand-primary transition-colors group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-muted group-hover:bg-brand-primary/10 flex items-center justify-center transition-colors">
-                    <Github className="w-4 h-4" />
-                  </div>
-                  <span>GitHub</span>
-                </a>
+            {/* Direct Contacts */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+              <h3 className="font-bold text-white text-lg mb-4">Direct Contacts</h3>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="text-slate-400">General</p>
+                  <a href="mailto:contact@rankify.page" className="text-indigo-400 hover:underline">
+                    contact@rankify.page
+                  </a>
+                </div>
+                <div>
+                  <p className="text-slate-400">Support</p>
+                  <a href="mailto:support@rankify.page" className="text-indigo-400 hover:underline">
+                    support@rankify.page
+                  </a>
+                </div>
+                <div>
+                  <p className="text-slate-400">Privacy</p>
+                  <a href="mailto:privacy@rankify.page" className="text-indigo-400 hover:underline">
+                    privacy@rankify.page
+                  </a>
+                </div>
               </div>
             </div>
 
-            {/* Support Hours */}
-            <div className="bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border border-border rounded-xl p-6">
-              <h3 className="font-bold text-lg mb-4">Support Hours</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Monday - Friday</span>
-                  <span className="font-medium">9am - 6pm PT</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Saturday</span>
-                  <span className="font-medium">10am - 4pm PT</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sunday</span>
-                  <span className="font-medium">Closed</span>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-4">
-                Enterprise customers receive 24/7 priority support via dedicated Slack channel.
+            {/* Social Links - Coming Soon */}
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+              <h3 className="font-bold text-white text-lg mb-4">Follow Us</h3>
+              <p className="text-sm text-slate-500">
+                Social media profiles coming soon. For now, reach us via email.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Department-Specific Contacts */}
-        <section>
-          <h2 className="text-2xl md:text-3xl font-bold mb-6">Department-Specific Contacts</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              {
-                department: "Sales & Pricing",
-                email: "sales@rankify.com",
-                description: "Questions about plans, pricing, or enterprise solutions",
-              },
-              {
-                department: "Technical Support",
-                email: "support@rankify.com",
-                description: "Help with features, bugs, or technical issues",
-              },
-              {
-                department: "Partnerships",
-                email: "partners@rankify.com",
-                description: "Agency partnerships, integrations, and collaborations",
-              },
-              {
-                department: "Press & Media",
-                email: "press@rankify.com",
-                description: "Media inquiries, interviews, and press kits",
-              },
-              {
-                department: "Security",
-                email: "security@rankify.com",
-                description: "Report security vulnerabilities (see our responsible disclosure policy)",
-              },
-              {
-                department: "Legal & Privacy",
-                email: "legal@rankify.com",
-                description: "GDPR requests, data processing agreements, compliance",
-              },
-            ].map((dept, idx) => (
-              <div key={idx} className="bg-card border border-border rounded-lg p-4 hover:border-brand-primary/50 transition-all">
-                <h4 className="font-semibold mb-1">{dept.department}</h4>
-                <a href={`mailto:${dept.email}`} className="text-brand-primary hover:underline text-sm font-medium block mb-2">
-                  {dept.email}
-                </a>
-                <p className="text-xs text-muted-foreground">{dept.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* FAQ Preview */}
-        <section className="bg-card border border-border rounded-2xl p-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Looking for Quick Answers?</h2>
-          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Check out our comprehensive Help Center with guides, tutorials, and FAQs. Most questions are answered instantly.
+        {/* FAQ Link */}
+        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Need Quick Answers?</h2>
+          <p className="text-slate-400 mb-6 max-w-2xl mx-auto">
+            Check out our About page to learn more about Rankify and how our SEO tools work.
           </p>
-          <a href="/help" className="rankify-button-outline inline-flex items-center gap-2 px-6 py-3">
-            Visit Help Center →
+          <a 
+            href="/about" 
+            className="inline-flex items-center gap-2 px-6 py-3 border border-zinc-700 text-white font-medium rounded-lg hover:bg-zinc-800 transition-colors"
+          >
+            Learn More About Rankify →
           </a>
         </section>
       </div>
