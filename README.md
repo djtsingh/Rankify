@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="apps/web/public/rankify-logo.png" alt="Rankify Logo" width="120" height="120">
+  <img src="apps/web/public/logo-horizontal.svg" alt="Rankify Logo" width="300" height="250">
 </p>
-
-<h1 align="center">Rankify</h1>
 
 <p align="center">
   <strong>🚀 Make Your Rankings Fly</strong>
