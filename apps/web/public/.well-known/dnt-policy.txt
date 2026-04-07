@@ -1,0 +1,22 @@
+# Rankify Do Not Track Policy
+# https://www.eff.org/dnt-policy
+
+# Status: Compliant with EFF DNT Policy
+# Last updated: 2026-02-19
+
+# When users enable Do Not Track (DNT), we:
+# 1. Do NOT collect browsing data for advertising
+# 2. Do NOT share data with third-party ad networks
+# 3. Do NOT perform behavioral tracking
+# 4. Only collect minimal analytics for service improvement
+
+# Essential data we still collect:
+# - Basic server logs (for security)
+# - Anonymized usage statistics (for product improvement)
+# - Data you explicitly provide (forms, account creation)
+
+# We respect your choice.
+
+TRACKING = N
+RETENTION = P3D
+POLICY-URI = https://www.rankify.page/privacy

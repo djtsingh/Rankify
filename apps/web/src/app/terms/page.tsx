@@ -1,7 +1,7 @@
 import PageLayout from "@/components/layout/PageLayout";
 
 export const metadata = {
-  title: "Terms of Service | Rankify",
+  title: "Terms of Service",
   description: "Terms and conditions for using Rankify's SEO analysis tools and services.",
 };
 

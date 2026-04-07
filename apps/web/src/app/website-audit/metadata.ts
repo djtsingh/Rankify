@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { generateSEO } from '@/lib/seo';
 
 export const metadata: Metadata = generateSEO({
-  title: 'Free Website SEO Audit Tool | Analyze & Optimize Your Site - Rankify',
+  title: 'Free Website SEO Audit Tool',
   description: 'Get a comprehensive SEO audit of your website for free. Check meta tags, performance, mobile-friendliness, security, and more. Instant results, no signup required.',
   keywords: [
     'website audit', 'SEO audit tool', 'free SEO checker', 'website analyzer',

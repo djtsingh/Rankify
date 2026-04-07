@@ -2,7 +2,7 @@ import PageLayout from "@/components/layout/PageLayout";
 import { Shield, Lock, Server, Eye, AlertTriangle, FileCheck, Award } from "lucide-react";
 
 export const metadata = {
-  title: "Security | Rankify",
+  title: "Security",
   description: "Learn how Rankify protects your data with enterprise-grade security measures.",
 };
 

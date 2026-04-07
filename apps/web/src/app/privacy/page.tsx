@@ -1,7 +1,7 @@
 import PageLayout from "@/components/layout/PageLayout";
 
 export const metadata = {
-  title: "Privacy Policy | Rankify",
+  title: "Privacy Policy",
   description: "Learn how Rankify collects, uses, and protects your personal data. GDPR and CCPA compliant.",
 };
 

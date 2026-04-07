@@ -1,0 +1,29 @@
+# Rankify Security Policy
+# This file follows RFC 9116 (https://www.rfc-editor.org/rfc/rfc9116)
+# Last updated: 2026-02-19
+
+# Security contact for vulnerability reports
+Contact: mailto:security@rankify.page
+Contact: https://www.rankify.page/security
+
+# Our security policy
+Policy: https://www.rankify.page/security
+Policy: https://www.rankify.page/privacy
+
+# Preferred languages for security reports
+Preferred-Languages: en
+
+# Acknowledgments page (when available)
+# Acknowledgments: https://www.rankify.page/security/acknowledgments
+
+# PGP key for encrypted communications (when available)
+# Encryption: https://www.rankify.page/.well-known/security-pgp-key.txt
+
+# Expiration date - update annually
+Expires: 2027-02-19T00:00:00.000Z
+
+# Hiring security researchers
+# Hiring: https://www.rankify.page/careers
+
+# Canonical URL
+Canonical: https://www.rankify.page/.well-known/security.txt

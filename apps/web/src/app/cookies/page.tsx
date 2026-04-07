@@ -1,7 +1,7 @@
 import PageLayout from "@/components/layout/PageLayout";
 
 export const metadata = {
-  title: "Cookie Policy | Rankify",
+  title: "Cookie Policy",
   description: "Learn about how Rankify uses cookies and similar tracking technologies.",
 };
 
