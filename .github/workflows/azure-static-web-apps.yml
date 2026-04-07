@@ -61,7 +61,14 @@ jobs:
           echo "Build output verified successfully"
 
       - name: Copy staticwebapp.config.json to output
-        run: cp staticwebapp.config.json apps/web/out/
+        run: |
+          cp staticwebapp.config.json apps/web/out/
+          if [ -f index.html ]; then
+            echo "Copying repo root index.html into build output"
+            cp index.html apps/web/out/index.html
+          else
+            echo "No repo root index.html to copy"
+          fi
 
       - name: Build And Deploy
         id: builddeploy
