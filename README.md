@@ -216,9 +216,8 @@ Push to the `main` branch to trigger automatic deployments:
 
 Before deploying to production, ensure:
 
-- [ ] All GitHub secrets are configured
-- [ ] Azure resources are provisioned and accessible
-- [ ] Database is initialized with proper schema
+<!-- CI: trigger workflow -->
+
 - [ ] Storage account has the `scan-jobs` queue created
 - [ ] Container registry has proper access policies
 - [ ] Service principal has required Azure permissions
