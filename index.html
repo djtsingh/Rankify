@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rankify — Rebuilding v2</title>
+<meta name="description" content="Rankify is being rebuilt from the ground up. A smarter, faster enterprise SEO platform is coming." />
+<meta property="og:title" content="Rankify — Rebuilding v2" />
+<meta property="og:description" content="Something better is being built. Stay tuned." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cyan: #00e5d1;
+    --coral: #ff6b6b;
+    --bg: #080b0f;
+    --bg2: #0e1318;
+    --bg3: #141a21;
+    --line: rgba(255,255,255,0.06);
+    --muted: rgba(255,255,255,0.35);
+    --text: rgba(255,255,255,0.88);
+    --mono: 'DM Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--display);
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* Grid lines background */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow-top {
+    position: fixed;
+    top: -180px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 300px;
+    background: radial-gradient(ellipse, rgba(0,229,209,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .glow-bottom {
+    position: fixed;
+    bottom: -140px;
+    right: -80px;
+    width: 420px;
+    height: 320px;
+    background: radial-gradient(ellipse, rgba(255,107,107,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .page {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+  }
+
+  /* Top bar */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 36px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(8,11,15,0.7);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .logo span { color: var(--cyan); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.02);
+    letter-spacing: 0.04em;
+  }
+
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--coral); }
+
+  /* Main content */
+  .main { max-width: 780px; width: 100%; text-align: center; }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    opacity: 1;
+  }
+
+  .eyebrow::before, .eyebrow::after { content: ''; display: block; width: 28px; height: 1px; background: var(--cyan); opacity: 0.5; }
+
+  .headline { font-size: clamp(40px, 6.5vw, 64px); font-weight: 700; line-height: 1; letter-spacing: -0.02em; color: #fff; margin-bottom: 18px; opacity: 1; }
+  .headline em { font-style: normal; color: var(--cyan); }
+
+  .sub { font-size: 15px; font-weight: 400; line-height: 1.6; color: var(--muted); max-width: 520px; margin: 0 auto 36px; opacity: 1; }
+
+  /* Progress bar area */
+  .rebuild-status { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 540px; margin: 0 auto 32px; opacity: 1; }
+  .progress-row { display: flex; align-items: center; gap: 14px; }
+  .progress-label { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 130px; text-align: right; flex-shrink: 0; letter-spacing: 0.02em; }
+  .progress-track { flex: 1; height: 2px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; position: relative; }
+  .progress-fill { height: 100%; border-radius: 2px; transform-origin: left; transform: scaleX(var(--w,1)); transition: none; }
+  .progress-fill.cyan { background: var(--cyan); }
+  .progress-fill.cyan2 { background: var(--cyan); opacity: 0.6; }
+  .progress-fill.coral { background: var(--coral); }
+  .progress-fill.muted { background: rgba(255,255,255,0.2); }
+  .progress-pct { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 34px; flex-shrink: 0; }
+
+  /* CTA area */
+  .cta-area { display: flex; flex-direction: column; align-items: center; gap: 20px; opacity: 1; }
+  .notify-form { display: flex; gap: 0; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
+  .notify-input { background: transparent; border: none; outline: none; padding: 14px 20px; font-family: var(--mono); font-size: 13px; color: #fff; width: 280px; }
+  .notify-input::placeholder { color: var(--muted); }
+  .notify-btn { background: var(--cyan); border: none; padding: 14px 22px; font-family: var(--display); font-size: 13px; font-weight: 600; color: #080b0f; cursor: pointer; white-space: nowrap; }
+
+  .github-link { font-family: var(--mono); font-size: 12px; color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 7px; }
+  .github-link svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Bottom ticker */
+  .ticker-wrap { position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid var(--line); overflow: hidden; background: rgba(8,11,15,0.8); padding: 10px 0; z-index: 100; }
+  .ticker { display: flex; gap: 0; white-space: nowrap; }
+  .ticker-item { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.05em; padding: 0 32px; border-right: 1px solid var(--line); flex-shrink: 0; }
+  .ticker-item span { color: var(--cyan); margin-right: 6px; }
+
+  .corner-tl, .corner-br { position: fixed; width: 60px; height: 60px; z-index: 2; opacity: 0.15; }
+  .corner-tl { top: 72px; left: 0; border-top: 1px solid var(--cyan); border-left: 1px solid var(--cyan); }
+  .corner-br { bottom: 44px; right: 0; border-bottom: 1px solid var(--coral); border-right: 1px solid var(--coral); }
+
+  .submitted-msg { font-family: var(--mono); font-size: 13px; color: var(--cyan); display: none; align-items: center; gap: 8px; }
+  .submitted-msg.visible { display: flex; }
+
+  @media (max-width: 600px) { .topbar { padding: 16px 20px; } .notify-input { width: 180px; } .progress-label { width: 90px; font-size: 10px; } .headline { letter-spacing: -0.03em; } .corner-tl, .corner-br { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="glow-top"></div>
+<div class="glow-bottom"></div>
+<div class="corner-tl"></div>
+<div class="corner-br"></div>
+
+<!-- Top bar -->
+<header class="topbar">
+  <a class="logo" href="#">Rank<span>ify</span></a>
+  <div class="status-pill">
+    <span class="status-dot"></span>
+    rebuilding v2
+  </div>
+</header>
+
+<!-- Main -->
+<main class="page">
+  <div class="main">
+
+    <div class="eyebrow">Under reconstruction</div>
+
+    <h1 class="headline">
+      Better SEO<br />intelligence<br />is <em>loading</em>
+    </h1>
+
+    <p class="sub">
+      Rankify v1 shipped. We found the gaps. We're fixing them — better architecture, real-time CWV, scheduled monitoring, and a retention loop that actually keeps you ahead of your rankings.
+    </p>
+
+    <!-- Rebuild progress -->
+    <div class="rebuild-status">
+
+      <div class="progress-row">
+        <span class="progress-label">Security hardening</span>
+        <div class="progress-track">
+          <div class="progress-fill cyan" style="--w:1"></div>
+        </div>
+        <span class="progress-pct">100%</span>
+      </div>
+
+      <div class="progress-row">
+        <span class="progress-label">IaC / staging env</span>
+        <div class="progress-track">
+          <div class="progress-fill cyan2" style="--w:0.35"></div>
+        </div>
+        <span class="progress-pct">35%</span>
+      </div>
+
+      <div class="progress-row">
+        <span class="progress-label">JS-rendered crawl</span>
+        <div class="progress-track">
+          <div class="progress-fill coral" style="--w:0.15"></div>
+        </div>
+        <span class="progress-pct">15%</span>
+      </div>
+
+      <div class="progress-row">
+        <span class="progress-label">Scan history + auth</span>
+        <div class="progress-track">
+          <div class="progress-fill muted" style="--w:0.05"></div>
+        </div>
+        <span class="progress-pct">5%</span>
+      </div>
+
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-area">
+      <div class="notify-form" id="form-wrap">
+        <input class="notify-input" type="email" id="email-input" placeholder="your@email.com" autocomplete="email" />
+        <button class="notify-btn" onclick="handleNotify()">Notify me</button>
+      </div>
+      <div class="submitted-msg" id="submitted">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="6.5" stroke="#00e5d1" stroke-width="1"/><path d="M4 7L6 9L10 5" stroke="#00e5d1" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        you're on the list — we'll ping you on launch
+      </div>
+      <a class="github-link" href="https://github.com/djtsingh/Rankify" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        github.com/djtsingh/Rankify
+      </a>
+    </div>
+
+  </div>
+</main>
+
+<!-- Bottom ticker -->
+<div class="ticker-wrap">
+  <div class="ticker" id="ticker">
+    <!-- items duplicated in JS for seamless loop -->
+  </div>
+</div>
+
+<script>
+  (function(){
+    // Progress fills: set width immediately (no animation)
+    document.querySelectorAll('.progress-fill').forEach(el => {
+      const w = parseFloat(el.style.getPropertyValue('--w') || '1');
+      el.style.transform = 'scaleX(' + w + ')';
+      el.style.animation = 'none';
+    });
+
+    // Populate ticker (static, no scroll)
+    const items = [
+      ['SECURITY', 'credentials rotated · SSRF protection incoming'],
+      ['ARCH', 'Bicep IaC — full Azure provisioning in code'],
+      ['WORKER', 'Playwright replacing BS4 for JS-rendered sites'],
+      ['API', 'rate limiting + JWT auth in progress'],
+      ['ML', 'sentence-transformers replacing TF-IDF'],
+      ['INFRA', 'staging environment · develop → main workflow'],
+      ['MONITOR', 'scheduled SEO scans · regression alerts'],
+      ['v2', 'estimated launch — soon™'],
+    ];
+    const ticker = document.getElementById('ticker');
+    if (ticker) {
+      items.forEach(([label, text]) => {
+        const div = document.createElement('div');
+        div.className = 'ticker-item';
+        div.innerHTML = '<span>' + label + '</span>' + text;
+        ticker.appendChild(div);
+      });
+    }
+
+    // Email notify
+    function handleNotify() {
+      const emailInput = document.getElementById('email-input');
+      const formWrap = document.getElementById('form-wrap');
+      const submitted = document.getElementById('submitted');
+      const email = emailInput ? emailInput.value.trim() : '';
+      if (!email || email.indexOf('@') === -1) {
+        if (emailInput) emailInput.style.borderBottom = '1px solid var(--coral)';
+        return;
+      }
+      if (formWrap) formWrap.style.display = 'none';
+      if (submitted) submitted.classList.add('visible');
+      console.log('Notify:', email);
+    }
+    window.handleNotify = handleNotify;
+    const emailEl = document.getElementById('email-input');
+    if (emailEl) {
+      emailEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') handleNotify();
+      });
+    }
+  })();
+</script>
+</body>
+</html>
