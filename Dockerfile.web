@@ -1,9 +1,8 @@
-# Multi-stage Dockerfile for Rankify Next.js SSR frontend
+# Multi-stage Dockerfile - Rankify Next.js Frontend
 
 FROM node:22-alpine AS builder
 WORKDIR /app
-COPY package.json ./
-COPY apps/web ./apps/web
+COPY . .
 RUN npm install
 WORKDIR /app/apps/web
 RUN npm install
@@ -12,18 +11,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 FROM node:22-alpine
-WORKDIR /app/apps/web
-
-# Copy all dependencies and build
-COPY --from=builder /app/node_modules ../node_modules
-COPY --from=builder /app/apps/web/node_modules ./node_modules
-COPY --from=builder /app/apps/web/.next ./.next
-COPY --from=builder /app/apps/web/public ./public
-COPY --from=builder /app/apps/web/package.json ./
+WORKDIR /app
+COPY --from=builder /app .
 
 EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Run next start with proper error logging
-CMD ["sh", "-c", "echo 'Starting Next.js...' && npm start || (echo 'Failed to start' && exit 1)"]
+WORKDIR /app/apps/web
+CMD ["npm", "start"]
