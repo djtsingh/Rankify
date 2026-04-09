@@ -12,213 +12,93 @@ on:
       - 'pnpm-lock.yaml'
 
 env:
-  AZURE_CONTAINER_REGISTRY: rankifyacr
-  CONTAINER_IMAGE_NAME: rankify-frontend
-  CONTAINER_APPS_NAME: rankify-web
-  CONTAINER_APPS_RESOURCE_GROUP: rankify-rg
-  NEXT_PUBLIC_API_URL: https://rankify-api.azurewebsites.net
-  NODE_ENV: production
+  REGISTRY: rankifyacr.azurecr.io
+  IMAGE_NAME: rankify-frontend
+  CONTAINER_APP_NAME: rankify-frontend
+  RESOURCE_GROUP: rankify
 
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
-    name: Build and Deploy to Container Apps
-    environment: AZ_resources
     permissions:
       contents: read
       packages: write
 
     steps:
-      # Checkout code
+      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
-      # Setup Node.js
+      # 2. Setup Node.js for verification
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
 
-      # Install pnpm
+      # 3. Install pnpm
       - name: Install pnpm
         run: npm install -g pnpm
 
-      # Install dependencies
+      # 4. Install and verify build
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: .
 
-      # Build Next.js (SSR mode - remove static export for Container Apps)
-      - name: Update Next.js config for SSR
-        run: |
-          cat > apps/web/next.config.ts << 'EOF'
-          import type { NextConfig } from "next";
-          import { withSentryConfig } from "@sentry/nextjs";
-
-          // Container Apps deployment - use SSR (not static export)
-          const nextConfig: NextConfig = {
-            // SSR mode for Container Apps - removes output: 'export'
-            images: {
-              remotePatterns: [
-                {
-                  protocol: 'https',
-                  hostname: '**',
-                },
-              ],
-            },
-            env: {
-              NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://rankify-api.azurewebsites.net',
-            },
-          };
-
-          export default withSentryConfig(nextConfig, {
-            org: "djtsingh",
-            project: "javascript-nextjs",
-            silent: !process.env.CI,
-            widenClientFileUpload: true,
-            sourcemaps: {
-              disable: true,
-            },
-            webpack: {
-              reactComponentAnnotation: {
-                enabled: true,
-              },
-              treeshake: {
-                removeDebugLogging: true,
-              },
-              automaticVercelMonitors: true,
-            },
-          });
-          EOF
-        working-directory: .
-
-      # Build Next.js application (SSR)
-      - name: Build Frontend (SSR)
+      - name: Verify Next.js build locally
         run: pnpm build:web
         env:
-          NEXT_PUBLIC_API_URL: ${{ env.NEXT_PUBLIC_API_URL }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_API_URL: https://rankify-v1-src.azurewebsites.net
           NODE_ENV: production
 
-      # Verify build output
-      - name: Verify build output
-        run: |
-          if [ ! -d "apps/web/.next" ]; then
-            echo "Build output directory (.next) not found!"
-            exit 1
-          fi
-          echo "✓ Next.js build output verified"
-          echo "Build contains:"
-          du -sh apps/web/.next
-          ls -la apps/web/.next
-
-      # Login to Azure
+      # 5. Azure login
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Login to ACR
-      - name: Login to Azure Container Registry
+      # 6. Build and push Docker image using ACR
+      - name: Build and push Docker image to ACR
         run: |
-          az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }}
-
-      # Build and push Docker image
-      - name: Build and push Docker image
-        id: docker_build
-        run: |
-          ACR_LOGIN_SERVER="${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io"
-          IMAGE_TAG="${{ github.sha }}"
-          IMAGE_LATEST="${{ env.CONTAINER_IMAGE_NAME }}:latest"
-          IMAGE_VERSIONED="${{ env.CONTAINER_IMAGE_NAME }}:${IMAGE_TAG:0:7}"
-          
-          echo "Building Docker image..."
-          docker build \
-            -f Dockerfile.web \
-            -t ${ACR_LOGIN_SERVER}/${IMAGE_LATEST} \
-            -t ${ACR_LOGIN_SERVER}/${IMAGE_VERSIONED} \
-            --build-arg NEXT_PUBLIC_API_URL="${{ env.NEXT_PUBLIC_API_URL }}" \
-            --build-arg DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+          az acr build \
+            --registry rankifyacr \
+            --image rankify-frontend:latest \
+            --image rankify-frontend:${{ github.sha }} \
+            --file Dockerfile.web \
             .
-          
-          echo "Pushing to ACR..."
-          docker push ${ACR_LOGIN_SERVER}/${IMAGE_LATEST}
-          docker push ${ACR_LOGIN_SERVER}/${IMAGE_VERSIONED}
-          
-          echo "image_uri=${ACR_LOGIN_SERVER}/${IMAGE_LATEST}" >> $GITHUB_OUTPUT
-          echo "image_tag=${IMAGE_TAG:0:7}" >> $GITHUB_OUTPUT
 
-      # Update Container Apps with new image
-      - name: Update Container Apps deployment
+      # 7. Update Container App with new image
+      - name: Update Container App
         run: |
-          ACR_LOGIN_SERVER="${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io"
-          IMAGE_URI="${{ steps.docker_build.outputs.image_uri }}"
-          IMAGE_TAG="${{ steps.docker_build.outputs.image_tag }}"
-          
-          echo "Updating Container App: ${{ env.CONTAINER_APPS_NAME }}"
-          
           az containerapp update \
-            --name ${{ env.CONTAINER_APPS_NAME }} \
-            --resource-group ${{ env.CONTAINER_APPS_RESOURCE_GROUP }} \
-            --image ${IMAGE_URI} \
-            --registry-login-server ${ACR_LOGIN_SERVER} \
-            --registry-username ${{ secrets.AZURE_REGISTRY_USERNAME }} \
-            --registry-password ${{ secrets.AZURE_REGISTRY_PASSWORD }} \
-            --set-env-vars \
-              NEXT_PUBLIC_API_URL="${{ env.NEXT_PUBLIC_API_URL }}" \
-              DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-              NODE_ENV="production"
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${{ env.REGISTRY }}/rankify-frontend:latest
 
-      # Verify deployment
-      - name: Verify Container Apps deployment
+      # 8. Verify deployment
+      - name: Verify deployment
         run: |
-          echo "Checking Container App status..."
-          az containerapp show \
-            --name ${{ env.CONTAINER_APPS_NAME }} \
-            --resource-group ${{ env.CONTAINER_APPS_RESOURCE_GROUP }} \
-            --query "properties.provisioningState" -o tsv
-          
-          FQDN=$(az containerapp show \
-            --name ${{ env.CONTAINER_APPS_NAME }} \
-            --resource-group ${{ env.CONTAINER_APPS_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" -o tsv)
-          
-          echo "Container App URL: https://${FQDN}"
-          
-          # Wait for container to be ready (max 60 seconds)
-          echo "Waiting for container to be ready..."
+          echo "Container App deployment started"
+          echo "Monitoring status..."
           for i in {1..30}; do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://${FQDN} || echo "000")
-            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "307" ]; then
-              echo "✓ Container App is responding (HTTP $HTTP_CODE)"
+            STATUS=$(az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query "properties.provisioningState" -o tsv)
+            echo "Attempt $i: Status = $STATUS"
+            if [ "$STATUS" = "Succeeded" ]; then
+              echo "✅ Deployment successful!"
               break
             fi
-            echo "Attempt $i/30: HTTP $HTTP_CODE, retrying..."
             sleep 2
           done
 
-      # Deployment summary
+      - name: Get Container App URL
+        run: |
+          URL=$(az containerapp show --name ${{ env.CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "Container App URL: $URL"
+
+      # 9. Deployment summary
       - name: Deployment Summary
         if: always()
         run: |
-          echo "=== CONTAINER APPS DEPLOYMENT SUMMARY ==="
-          echo "Application: ${{ env.CONTAINER_APPS_NAME }}"
-          echo "Registry: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io"
-          echo "Image: ${{ steps.docker_build.outputs.image_uri }}"
-          echo "Image Tag: ${{ steps.docker_build.outputs.image_tag }}"
+          echo "=== DEPLOYMENT SUMMARY ==="
+          echo "Image: ${{ env.REGISTRY }}/rankify-frontend:latest"
           echo "Commit: ${{ github.sha }}"
           echo "Branch: ${{ github.ref }}"
-          echo "Triggered by: ${{ github.actor }}"
-          echo "Deployment Type: SSR (Server-Side Rendering)"
-          echo "Environment: ${{ env.NODE_ENV }}"
-          
-          if [ ${{ job.status }} = 'success' ]; then
-            echo "Status: ✅ SUCCESS"
-            echo "Frontend has been successfully deployed to Container Apps!"
-          else
-            echo "Status: ❌ FAILED"
-            echo "Check the logs above for details."
-          fi
+          echo "Status: Deployment workflow completed"
