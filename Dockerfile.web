@@ -62,3 +62,4 @@ USER nextjs
 # Start app
 ENTRYPOINT ["/sbin/dumb-init", "--"]
 CMD ["npm", "start"]
+// Deployment trigger 1775724880
