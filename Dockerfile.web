@@ -17,7 +17,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json pnpm-lock.yaml ./
 COPY apps/web ./apps/web
-COPY .gitignore ./.gitignore
 
 # Build Next.js application (SSR mode - not static export)
 ENV NODE_ENV=production
