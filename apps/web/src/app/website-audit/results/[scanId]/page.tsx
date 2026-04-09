@@ -14,10 +14,11 @@ import ResultsPageContent from './ResultsPageContent';
 // Dynamic route segment - no pre-generation needed with SSR
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({ params }: { params: { scanId: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ scanId: string }> }): Promise<Metadata> {
   // Server-side metadata generation for proper SEO
+  const { scanId } = await params;
   return {
-    title: `SEO Audit Results - ${params.scanId} | Rankify`,
+    title: `SEO Audit Results - ${scanId} | Rankify`,
     description: 'Comprehensive SEO audit results with actionable insights',
   };
 }
