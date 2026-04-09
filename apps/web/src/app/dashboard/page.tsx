@@ -1,241 +1,283 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useAuth, getUserEmail, getUserName } from '@/lib/auth/useAuth';
-import { Search, BarChart3, Zap, Clock, TrendingUp, Shield } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Navigation } from "@/components/layout/Navigation";
+import { Footer } from "@/components/layout/Footer";
+import { Plus, Trash2, ExternalLink, RefreshCw, Calendar, Globe } from "lucide-react";
+import Link from "next/link";
+
+interface Project {
+  id: string;
+  name: string;
+  domain: string;
+  url: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function DashboardPage() {
-  const { user, isLoading, logout } = useAuth();
-  
-  // Loading state
-  if (isLoading) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showNewProject, setShowNewProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectUrl, setNewProjectUrl] = useState("");
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  // Load projects
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchProjects();
+    }
+  }, [status]);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch("/api/v1/projects", {
+        headers: {
+          Authorization: `Bearer ${session?.user?.id}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProjects(data.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to load projects:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("/api/v1/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.user?.id}`,
+        },
+        body: JSON.stringify({
+          name: newProjectName,
+          url: newProjectUrl,
+        }),
+      });
+
+      if (response.ok) {
+        setNewProjectName("");
+        setNewProjectUrl("");
+        setShowNewProject(false);
+        fetchProjects();
+      }
+    } catch (error) {
+      console.error("Failed to create project:", error);
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    if (!confirm("Delete this project? This cannot be undone.")) return;
+
+    try {
+      const response = await fetch(`/api/v1/projects/${projectId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session?.user?.id}`,
+        },
+      });
+
+      if (response.ok) {
+        fetchProjects();
+      }
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+    }
+  };
+
+  const handleAuditProject = (project: Project) => {
+    router.push(`/website-audit?url=${encodeURIComponent(project.url)}&projectId=${project.id}`);
+  };
+
+  if (status === "loading" || !session) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full border-2 border-zinc-800"></div>
-            <div className="absolute inset-0 w-12 h-12 rounded-full border-2 border-coral border-t-transparent animate-spin"></div>
+      <div className="min-h-screen bg-gradient-to-br from-[#080b0f] via-[#0e1318] to-[#080b0f]">
+        <Navigation />
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="inline-block animate-spin">
+              <RefreshCw className="w-8 h-8 text-[#00e5d1]" />
+            </div>
+            <p className="mt-4 text-[rgba(255,255,255,0.5)]">Loading...</p>
           </div>
-          <p className="text-zinc-500 text-sm">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // SWA handles auth at edge, but fallback for safety
-  if (!user) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-    return null;
-  }
-
-  const email = getUserEmail(user);
-  const name = getUserName(user);
-  const initial = name?.[0] || email?.[0] || 'U';
-
   return (
-    <div className="min-h-screen bg-zinc-950">
-      {/* Header */}
-      <header className="border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-extrabold text-white tracking-tight group">
-            <span className="text-coral group-hover:text-coral-light transition-colors">Rank</span>ify
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-zinc-400 text-sm hidden md:block">
-              {email}
-            </span>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-coral to-pink flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-coral/20">
-              {initial}
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#080b0f] via-[#0e1318] to-[#080b0f]">
+      <Navigation />
+
+      <main className="max-w-7xl mx-auto px-6 py-16">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">
+              <span className="text-[#00e5d1]">Projects</span>
+            </h1>
+            <p className="text-[rgba(255,255,255,0.5)]">
+              Manage and monitor your websites
+            </p>
+          </div>
+          <button
+            onClick={() => setShowNewProject(!showNewProject)}
+            className="flex items-center gap-2 bg-gradient-to-r from-[#00e5d1] to-[#00d4bf] hover:shadow-lg hover:shadow-cyan-500/20 text-[#080b0f] font-semibold py-3 px-6 rounded-lg transition"
+          >
+            <Plus className="w-5 h-5" />
+            New Project
+          </button>
+        </div>
+
+        {/* New Project Form */}
+        {showNewProject && (
+          <div className="mb-12 p-6 bg-gradient-to-b from-[#141a21] to-[#0e1318] border border-[rgba(255,255,255,0.06)] rounded-xl">
+            <h2 className="text-xl font-bold mb-4">Create New Project</h2>
+            <form onSubmit={handleCreateProject} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Project name"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  className="bg-[#0a0d12] border border-[rgba(255,255,255,0.08)] rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#00e5d1]/50"
+                  required
+                />
+                <input
+                  type="url"
+                  placeholder="Website URL (https://example.com)"
+                  value={newProjectUrl}
+                  onChange={(e) => setNewProjectUrl(e.target.value)}
+                  className="bg-[#0a0d12] border border-[rgba(255,255,255,0.08)] rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#00e5d1]/50"
+                  required
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  className="bg-[#00e5d1] hover:bg-[#00d4bf] text-[#080b0f] font-semibold py-2 px-6 rounded-lg transition"
+                >
+                  Create
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewProject(false)}
+                  className="bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] text-white font-semibold py-2 px-6 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Projects Grid */}
+        {loading ? (
+          <div className="text-center py-12">
+            <RefreshCw className="w-8 h-8 animate-spin text-[#00e5d1] mx-auto mb-4" />
+            <p className="text-[rgba(255,255,255,0.5)]">Loading projects...</p>
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="text-center py-12 px-6 bg-gradient-to-b from-[#141a21] to-[#0e1318] border border-[rgba(255,255,255,0.06)] rounded-xl">
+            <Globe className="w-12 h-12 text-[rgba(255,255,255,0.2)] mx-auto mb-4" />
+            <p className="text-[rgba(255,255,255,0.5)] mb-4">No projects yet. Create one to get started.</p>
             <button
-              onClick={() => logout('/')}
-              className="text-zinc-400 hover:text-white text-sm transition-colors px-3 py-2 rounded-lg hover:bg-zinc-800/50"
+              onClick={() => setShowNewProject(true)}
+              className="inline-flex items-center gap-2 bg-[#00e5d1] hover:bg-[#00d4bf] text-[#080b0f] font-semibold py-2 px-4 rounded-lg transition"
             >
-              Sign out
+              <Plus className="w-4 h-4" />
+              Create First Project
             </button>
           </div>
-        </div>
-      </header>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project) => (
+              <div
+                key={project.id}
+                className="group p-6 bg-gradient-to-b from-[#141a21] to-[#0e1318] border border-[rgba(255,255,255,0.06)] hover:border-[#00e5d1]/30 rounded-xl transition"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold mb-1">{project.name}</h3>
+                    <p className="text-sm text-[rgba(255,255,255,0.4)] truncate">
+                      {project.domain}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteProject(project.id)}
+                    className="p-2 hover:bg-red-500/10 rounded-lg transition text-red-400 hover:text-red-300"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
-        {/* Welcome Section */}
-        <div className="mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald/10 text-emerald rounded-full text-xs font-medium mb-4">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald animate-pulse"></div>
-            Dashboard
+                {/* Status */}
+                <div className="mb-4 p-3 bg-[rgba(0,229,209,0.05)] border border-[rgba(0,229,209,0.1)] rounded-lg">
+                  <p className="text-xs text-[rgba(255,255,255,0.5)] mb-1">Status</p>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${project.isActive ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+                    <span className="text-sm font-medium text-[rgba(255,255,255,0.7)]">
+                      {project.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Metadata */}
+                <div className="grid grid-cols-2 gap-3 mb-4 text-xs text-[rgba(255,255,255,0.4)]">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3 h-3" />
+                    <span>{new Date(project.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-3 h-3" />
+                    <span>Monitor</span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleAuditProject(project)}
+                    className="flex-1 bg-[#00e5d1] hover:bg-[#00d4bf] text-[#080b0f] font-semibold py-2 rounded-lg transition text-sm flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Audit
+                  </button>
+                  <button
+                    onClick={() => window.open(project.url, '_blank')}
+                    className="flex-1 bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.15)] text-white font-semibold py-2 rounded-lg transition text-sm flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Visit
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-            Welcome back, <span className="text-coral">{name || 'there'}</span>!
-          </h1>
-          <p className="text-zinc-400 mt-3 text-lg">
-            Manage your SEO audits and track your website performance.
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-10">
-          <StatCard
-            icon={<BarChart3 className="w-5 h-5" />}
-            title="Total Scans"
-            value="0"
-            change="+0 this week"
-            color="emerald"
-          />
-          <StatCard
-            icon={<Shield className="w-5 h-5" />}
-            title="Current Plan"
-            value="Free"
-            change="Upgrade for more"
-            color="coral"
-            badge="Free"
-          />
-          <StatCard
-            icon={<Clock className="w-5 h-5" />}
-            title="Scan Quota"
-            value="5/day"
-            change="Resets daily"
-            color="cyan"
-          />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-zinc-900/50 rounded-2xl p-6 md:p-8 border border-zinc-800">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Quick Actions</h2>
-            <span className="text-zinc-500 text-sm">Get started</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <ActionCard
-              href="/website-audit"
-              title="New Scan"
-              description="Run a comprehensive SEO audit"
-              icon={<Search className="w-6 h-6" />}
-              color="coral"
-              primary
-            />
-            <ActionCard
-              href="/dashboard/history"
-              title="View History"
-              description="See your past scans and reports"
-              icon={<TrendingUp className="w-6 h-6" />}
-              color="emerald"
-            />
-            <ActionCard
-              href="/pricing"
-              title="Upgrade Plan"
-              description="Get unlimited scans with Pro"
-              icon={<Zap className="w-6 h-6" />}
-              color="cyan"
-            />
-          </div>
-        </div>
-
-        {/* Recent Activity - Empty State */}
-        <div className="mt-10 bg-zinc-900/30 rounded-2xl p-8 md:p-12 border border-zinc-800/50 text-center">
-          <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-6">
-            <Search className="w-8 h-8 text-zinc-600" />
-          </div>
-          <h3 className="text-xl font-semibold text-white mb-2">No scans yet</h3>
-          <p className="text-zinc-500 mb-6 max-w-md mx-auto">
-            Run your first SEO audit to see detailed insights and recommendations for your website.
-          </p>
-          <Link
-            href="/website-audit"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-coral to-pink text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-coral/20 transition-all duration-200 hover:-translate-y-0.5"
-          >
-            <Search className="w-4 h-4" />
-            Start Your First Scan
-          </Link>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function StatCard({ 
-  icon, 
-  title, 
-  value, 
-  change, 
-  color,
-  badge 
-}: { 
-  icon: React.ReactNode;
-  title: string; 
-  value: string; 
-  change: string;
-  color: 'emerald' | 'coral' | 'cyan';
-  badge?: string;
-}) {
-  const colorClasses = {
-    emerald: 'bg-emerald/10 text-emerald',
-    coral: 'bg-coral/10 text-coral',
-    cyan: 'bg-cyan/10 text-cyan',
-  };
-
-  return (
-    <div className="bg-zinc-900/50 rounded-xl p-6 border border-zinc-800 hover:border-zinc-700 transition-colors group">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`w-10 h-10 rounded-lg ${colorClasses[color]} flex items-center justify-center`}>
-          {icon}
-        </div>
-        {badge && (
-          <span className="px-2 py-1 bg-coral/10 text-coral text-xs font-medium rounded-full">
-            {badge}
-          </span>
         )}
-      </div>
-      <p className="text-zinc-500 text-sm">{title}</p>
-      <p className="text-3xl font-bold text-white mt-1 tracking-tight">{value}</p>
-      <p className="text-zinc-600 text-sm mt-2">{change}</p>
+      </main>
+
+      <Footer />
     </div>
-  );
-}
-
-function ActionCard({ 
-  href, 
-  title, 
-  description, 
-  icon,
-  color,
-  primary
-}: { 
-  href: string; 
-  title: string; 
-  description: string;
-  icon: React.ReactNode;
-  color: 'coral' | 'emerald' | 'cyan';
-  primary?: boolean;
-}) {
-  const colorClasses = {
-    coral: 'bg-coral/10 text-coral group-hover:bg-coral/20',
-    emerald: 'bg-emerald/10 text-emerald group-hover:bg-emerald/20',
-    cyan: 'bg-cyan/10 text-cyan group-hover:bg-cyan/20',
-  };
-
-  const hoverBorderClasses = {
-    coral: 'hover:border-coral/30',
-    emerald: 'hover:border-emerald/30',
-    cyan: 'hover:border-cyan/30',
-  };
-
-  return (
-    <Link
-      href={href}
-      className={`flex items-start gap-4 p-5 bg-zinc-950/50 rounded-xl border border-zinc-800 ${hoverBorderClasses[color]} hover:bg-zinc-900/50 transition-all duration-200 group ${primary ? 'ring-1 ring-coral/20' : ''}`}
-    >
-      <div className={`w-12 h-12 rounded-xl ${colorClasses[color]} flex items-center justify-center transition-colors flex-shrink-0`}>
-        {icon}
-      </div>
-      <div>
-        <h3 className="text-white font-semibold group-hover:text-coral transition-colors">
-          {title}
-        </h3>
-        <p className="text-zinc-500 text-sm mt-1">{description}</p>
-      </div>
-    </Link>
   );
 }
