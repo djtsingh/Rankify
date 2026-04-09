@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 COPY apps/web/package.json ./apps/web/
 RUN npm install -g pnpm@latest && \
-    pnpm install --frozen-lockfile --prod=false
+    pnpm install --frozen-lockfile
 
 # Stage 2: Builder
 FROM node:22-alpine AS builder
@@ -21,9 +21,8 @@ COPY apps/web ./apps/web
 # Build Next.js application (SSR mode - not static export)
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm install -g pnpm@latest && \
-    cd apps/web && \
-    npm run build
+RUN cd apps/web && \
+    npx next build
 
 # Stage 3: Runtime
 FROM node:22-alpine AS runtime
@@ -36,7 +35,7 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Copy only production dependencies
+# Copy node_modules (includes all deps needed for next start)
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=deps --chown=nextjs:nodejs /app/package.json ./
 
