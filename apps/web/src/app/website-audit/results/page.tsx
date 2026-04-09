@@ -1,13 +1,27 @@
 /**
- * Results Page - Static Route for Static Export Compatibility
+ * Results Page - Dynamic SSR Route
  *
- * Uses query parameters instead of dynamic routes for Next.js static export:
- * - /website-audit/results?scan=123&url=example.com
- * - Compatible with Azure Static Web Apps deployment
+ * Supports both patterns:
+ * - /website-audit/results/[scanId] - dynamic route SSR
+ * - /website-audit/results?scan=123&url=example.com - query param fallback
+ * 
+ * Server-side rendering ensures:
+ * - Real crawlable content for search engines
+ * - No hydration flashes (content on first paint)
+ * - Dynamic metadata for each audit
  */
 
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import ResultsPageContent from './ResultsPageContent';
+
+// Force dynamic rendering for real-time audit data
+export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'SEO Audit Results | Rankify',
+  description: 'Your comprehensive SEO audit results with actionable insights and recommendations',
+};
 
 // Loading skeleton while client component hydrates
 function LoadingSkeleton() {

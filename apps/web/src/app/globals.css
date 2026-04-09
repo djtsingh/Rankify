@@ -212,6 +212,9 @@
     box-shadow: var(--shadow-hover-primary);
     position: relative;
     overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .rankify-button::before {
@@ -243,6 +246,16 @@
     outline-offset: 2px;
   }
 
+  .dark .rankify-button {
+    background: var(--color-brand-primary);
+    color: white;
+  }
+
+  :root .rankify-button {
+    background: var(--color-brand-primary);
+    color: white;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .rankify-button {
       transition: none;
@@ -266,6 +279,9 @@
     border-radius: 0.75rem;
     transition: all 0.3s ease;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .rankify-button-outline:hover {
@@ -273,6 +289,21 @@
     color: white;
     transform: translateY(-2px);
     box-shadow: var(--shadow-hover-primary);
+  }
+
+  .dark .rankify-button-outline {
+    color: var(--color-brand-primary);
+    border-color: var(--color-brand-primary);
+  }
+
+  .dark .rankify-button-outline:hover {
+    background: var(--color-brand-primary);
+    color: white;
+  }
+
+  :root .rankify-button-outline {
+    color: var(--color-brand-primary);
+    border-color: var(--color-brand-primary);
   }
 
   /* Secondary Button - Cyan */
@@ -373,6 +404,21 @@
     border-color: var(--color-brand-primary);
     box-shadow: 0 10px 30px var(--shadow-glow-primary);
     transform: translateY(-4px);
+  }
+
+  .dark .rankify-card {
+    background: var(--card);
+    border-color: var(--border);
+  }
+
+  .dark .rankify-card:hover {
+    border-color: var(--color-brand-primary);
+  }
+
+  /* Light mode override */
+  :root .rankify-card {
+    background: var(--card);
+    border-color: var(--border);
   }
 
   /* Divider */

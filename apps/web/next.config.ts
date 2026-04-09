@@ -1,18 +1,22 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-// Production-only configuration for Azure Static Web Apps
+// Production configuration for Azure Container Apps with SSR
 const nextConfig: NextConfig = {
-  // Always use static export for production deployment
-  output: 'export',
+  // Enable Server-Side Rendering (SSR) for dynamic content and real SEO
+  // output: 'export' removed - Container Apps supports Node.js server runtime
   images: {
-    unoptimized: true,
+    // Enable next/image optimization with remote image handling
+    unoptimized: false,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
-  trailingSlash: true,
-  // Production API URL is set in environment variables
-  env: {
-    NEXT_PUBLIC_API_URL: 'https://rankify-v1-src.azurewebsites.net',
-  },
+  // SSR doesn't require trailing slashes; disabled for cleaner URLs
+  // Environment variables - use Container Apps env config at runtime
 };
 
 export default withSentryConfig(nextConfig, {
@@ -31,9 +35,8 @@ export default withSentryConfig(nextConfig, {
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 
-  // NOTE: tunnelRoute disabled because we use static exports (output: 'export')
-  // tunnelRoute requires server-side rewrites which aren't available in static mode.
-  // Events are sent directly to Sentry instead.
+  // SSR mode enables full server-side features including Sentry tunneling if needed
+  // tunnelRoute can now be configured for enhanced error reporting
 
   // Disable source map uploading
   sourcemaps: {

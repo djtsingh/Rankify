@@ -382,12 +382,12 @@ export default function Home() {
       </section>
 
       {/* Trusted By Section - Light Alternate */}
-      <section className="py-12 bg-white/5 backdrop-blur-sm border-y border-zinc-800/50">
+      <section className="py-12 md:py-16 bg-white/5 backdrop-blur-sm border-y border-zinc-800/50">
         <div className="container max-w-6xl px-4 md:px-6 mx-auto">
-          <p className="text-center text-sm text-zinc-500 mb-6">TRUSTED BY INDUSTRY LEADERS</p>
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
+          <p className="text-center text-xs md:text-sm text-zinc-500 mb-6 md:mb-8 uppercase tracking-wider font-semibold">TRUSTED BY INDUSTRY LEADERS</p>
+          <div className="flex flex-wrap justify-center items-center gap-6 md:gap-8 lg:gap-12">
             {trustedBy.map((company, idx) => (
-              <div key={idx} className="text-zinc-600 font-bold text-lg md:text-xl opacity-50 hover:opacity-100 transition-opacity cursor-default">
+              <div key={idx} className="text-zinc-600 font-bold text-base md:text-lg lg:text-xl opacity-50 hover:opacity-100 transition-opacity cursor-default">
                 {company.logo}
               </div>
             ))}
@@ -575,36 +575,36 @@ export default function Home() {
       {/* Why Rankify Section - White Alternate */}
       <section className="py-16 md:py-24 bg-white text-zinc-900">
         <div className="container max-w-6xl px-4 md:px-6 mx-auto">
-          <div className="text-center mb-12">
-            <span className="text-coral text-sm font-semibold tracking-wider uppercase mb-2 block">Why Choose Us</span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-zinc-900">
+          <div className="text-center mb-12 md:mb-16">
+            <span className="text-coral text-xs md:text-sm font-semibold tracking-wider uppercase mb-2 md:mb-4 block">Why Choose Us</span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 text-zinc-900">
               Built for <span className="text-coral">Results</span>
             </h2>
-            <p className="text-base md:text-lg text-zinc-600 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-zinc-600 max-w-2xl mx-auto px-4 md:px-0">
               We obsess over the details so you can focus on what matters - growing your business.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
               { icon: Rocket, title: "Lightning Fast", desc: "Real-time data updates every 15 minutes", color: "bg-coral/10 text-coral" },
               { icon: Shield, title: "99.9% Uptime", desc: "Enterprise-grade reliability you can trust", color: "bg-cyan/10 text-cyan" },
               { icon: Globe, title: "200+ Countries", desc: "Track rankings in any location worldwide", color: "bg-emerald/10 text-emerald" },
               { icon: Users, title: "24/7 Support", desc: "Expert help whenever you need it", color: "bg-pink/10 text-pink" },
             ].map((item, idx) => (
-              <div key={idx} className="text-center p-6 rounded-2xl bg-zinc-50 hover:bg-zinc-100 transition-colors group">
+              <div key={idx} className="text-center p-6 md:p-8 rounded-2xl bg-zinc-50 hover:bg-zinc-100 transition-colors group">
                 <div className={`w-14 h-14 mx-auto mb-4 rounded-xl ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
                   <item.icon className="w-7 h-7" />
                 </div>
-                <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+                <h3 className="text-lg font-bold mb-2 text-zinc-900">{item.title}</h3>
                 <p className="text-sm text-zinc-600">{item.desc}</p>
               </div>
             ))}
           </div>
 
           {/* Metrics bar */}
-          <div className="mt-16 p-8 bg-gradient-to-r from-coral/10 via-cyan/10 to-emerald/10 rounded-2xl">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <div className="mt-16 p-6 md:p-8 bg-gradient-to-r from-coral/10 via-cyan/10 to-emerald/10 rounded-2xl">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center">
               {[
                 { value: "2M+", label: "Websites Audited" },
                 { value: "500M+", label: "Keywords Tracked" },
@@ -612,8 +612,8 @@ export default function Home() {
                 { value: "4.9★", label: "User Rating" },
               ].map((metric, idx) => (
                 <div key={idx}>
-                  <div className="text-2xl md:text-3xl font-bold text-coral">{metric.value}</div>
-                  <div className="text-sm text-zinc-600">{metric.label}</div>
+                  <div className="text-xl md:text-2xl lg:text-3xl font-bold text-coral">{metric.value}</div>
+                  <div className="text-xs md:text-sm text-zinc-600">{metric.label}</div>
                 </div>
               ))}
             </div>
@@ -628,17 +628,17 @@ export default function Home() {
         </div>
 
         <div className="container max-w-6xl px-4 md:px-6 mx-auto">
-          <div className="text-center mb-12">
-            <span className="text-cyan text-sm font-semibold tracking-wider uppercase mb-2 block">Testimonials</span>
-            <h2 id="testimonials-heading" className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
+          <div className="text-center mb-12 md:mb-16">
+            <span className="text-cyan text-xs md:text-sm font-semibold tracking-wider uppercase mb-2 md:mb-4 block">Testimonials</span>
+            <h2 id="testimonials-heading" className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 text-white">
               Trusted by <span className="text-coral">Leading Agencies</span>
             </h2>
-            <p className="text-lg text-zinc-400">
+            <p className="text-base md:text-lg text-zinc-400 px-4 md:px-0">
               Join thousands of SEO professionals using Rankify to dominate search results.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
             {testimonials.map((testimonial, idx) => (
               <div key={idx} className="rankify-card p-6 hover:border-coral/30 transition-colors">
                 <div className="flex items-center gap-4 mb-4">
@@ -665,7 +665,7 @@ export default function Home() {
       {/* CTA Section - White Alternate */}
       <section className="py-16 md:py-24 bg-white text-zinc-900" aria-labelledby="cta-heading">
         <div className="container max-w-4xl text-center px-4 md:px-6 mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-coral/10 text-coral rounded-full text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-coral/10 text-coral rounded-full text-xs md:text-sm font-medium mb-6">
             <Clock className="w-4 h-4" />
             Limited Time: 20% off all plans
           </div>
@@ -673,14 +673,14 @@ export default function Home() {
           <h2 id="cta-heading" className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6">
             Ready to <span className="text-coral">Dominate</span> Your Niche?
           </h2>
-          <p className="text-base md:text-lg text-zinc-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-zinc-600 mb-8 max-w-2xl mx-auto px-4 md:px-0">
             Join thousands of successful SEO professionals. Start your free trial today—no credit card required.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <Link
               href="/website-audit"
-              className="rankify-button flex items-center gap-2 text-base md:text-lg px-6 md:px-8 py-3 md:py-4 w-full sm:w-auto"
+              className="rankify-button flex items-center justify-center gap-2 text-base md:text-lg px-6 md:px-8 py-3 md:py-4 w-full sm:w-auto"
             >
               Start Free Trial
               <ArrowRight className="w-5 h-5" />
@@ -693,7 +693,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-zinc-500">
+          <div className="flex flex-wrap justify-center gap-4 md:gap-6 text-xs md:text-sm text-zinc-500">
             <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald" /> Free 14-day trial</span>
             <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald" /> No credit card required</span>
             <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald" /> Cancel anytime</span>

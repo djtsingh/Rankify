@@ -1,22 +1,26 @@
 /**
- * Results Page Server Wrapper
+ * Results Page Server Component
  * 
- * This implements the "Wrapper Fix" pattern for Next.js static export:
- * - generateStaticParams returns a placeholder to satisfy static export
- * - ResultsPageContent is a client component that handles everything
- * - The client component reads scanId from URL using useParams()
+ * Now uses full SSR with dynamic route matching.
+ * - No generateStaticParams needed (SSR handles all scanIds dynamically)
+ * - ResultsPageContent is server-rendered for proper Next.js App Router support
+ * - Metadata generated server-side for real SEO benefit
  */
 
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import ResultsPageContent from './ResultsPageContent';
 
-// For static export - we must return at least one param
-// The actual scanId is read client-side via useParams()
-// This "placeholder" route enables the pattern to work
-// Only use in production (static export mode)
-export const generateStaticParams = process.env.NODE_ENV === 'production' ? 
-  () => [{ scanId: 'placeholder' }] : 
-  undefined;
+// Dynamic route segment - no pre-generation needed with SSR
+export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: { scanId: string } }): Promise<Metadata> {
+  // Server-side metadata generation for proper SEO
+  return {
+    title: `SEO Audit Results - ${params.scanId} | Rankify`,
+    description: 'Comprehensive SEO audit results with actionable insights',
+  };
+}
 
 // Loading skeleton while client component hydrates
 function LoadingSkeleton() {
