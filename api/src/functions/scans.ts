@@ -2,6 +2,8 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import { prisma } from "../lib/prisma";
 import { QueueServiceClient } from "@azure/storage-queue";
 import { randomUUID } from "crypto";
+import { validateScanUrl } from "../lib/validation";
+import { checkRateLimit, RATE_LIMIT_CONFIGS, getClientIp, addRateLimitHeaders } from "../lib/rate-limit";
 
 const STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING || process.env.AzureWebJobsStorage || '';
 const QUEUE_NAME = 'scan-jobs';
@@ -42,6 +44,13 @@ export async function createScan(request: HttpRequest, context: InvocationContex
     }
 
     try {
+        // Apply rate limiting - STAGE 1: Security hardening
+        const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.scan);
+        if (!rateLimitResult.allowed) {
+            context.log(`Rate limit exceeded for IP: ${getClientIp(request)}`);
+            return rateLimitResult.response!;
+        }
+
         const body = await request.json() as { url?: string };
         const url = body.url;
 
@@ -53,17 +62,21 @@ export async function createScan(request: HttpRequest, context: InvocationContex
             };
         }
 
-        let normalizedUrl: string;
-        try {
-            normalizedUrl = url.match(/^https?:\/\//) ? url : `https://${url}`;
-            new URL(normalizedUrl);
-        } catch {
+        // Validate and sanitize URL - STAGE 1: SSRF protection
+        const urlValidation = validateScanUrl(url, { 
+            allowPrivate: false, 
+            requireTld: true 
+        });
+        
+        if (!urlValidation.isValid) {
             return {
                 status: 400,
                 headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-                jsonBody: { error: 'Invalid URL', message: 'Please provide a valid URL' }
+                jsonBody: { error: 'Invalid URL', message: urlValidation.error }
             };
         }
+
+        const normalizedUrl = urlValidation.value!;
 
         const scanId = randomUUID();
         const urlHash = Buffer.from(normalizedUrl).toString('base64').substring(0, 64);
@@ -78,7 +91,7 @@ export async function createScan(request: HttpRequest, context: InvocationContex
         // Log audit event for scan creation
         await logAuditEvent(scanId, normalizedUrl, 'CREATED', undefined, {
             userAgent: request.headers.get('user-agent'),
-            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+            ipAddress: getClientIp(request),
             source: 'api'
         });
 
@@ -102,14 +115,14 @@ export async function createScan(request: HttpRequest, context: InvocationContex
             await logAuditEvent(scanId, normalizedUrl, 'FAILED', undefined, {
                 error: 'Failed to queue job',
                 userAgent: request.headers.get('user-agent'),
-                ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+                ipAddress: getClientIp(request),
                 source: 'api'
             }, undefined, 'Failed to queue job');
 
             throw queueError;
         }
 
-        return {
+        const response: HttpResponseInit = {
             status: 202,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
             jsonBody: {
@@ -120,6 +133,9 @@ export async function createScan(request: HttpRequest, context: InvocationContex
                 estimated_time_seconds: 30
             }
         };
+
+        // Add rate limit headers to response
+        return addRateLimitHeaders(response, RATE_LIMIT_CONFIGS.scan.maxRequests, rateLimitResult.remaining, rateLimitResult.resetTime);
 
     } catch (error) {
         context.error('Error creating scan:', error);
@@ -150,16 +166,23 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
         };
     }
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!scanId || !uuidRegex.test(scanId)) {
-        return {
-            status: 400,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-            jsonBody: { error: 'Invalid scan ID format', message: 'Scan ID must be a valid UUID' }
-        };
-    }
-
     try {
+        // Apply rate limiting to GET requests too
+        const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.api);
+        if (!rateLimitResult.allowed) {
+            context.log(`Rate limit exceeded for IP: ${getClientIp(request)}`);
+            return rateLimitResult.response!;
+        }
+
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!scanId || !uuidRegex.test(scanId)) {
+            return {
+                status: 400,
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+                jsonBody: { error: 'Invalid scan ID format', message: 'Scan ID must be a valid UUID' }
+            };
+        }
+
         const scanResult = await prisma.$queryRaw<any[]>`
             SELECT
                 s.id as scan_id,
@@ -211,27 +234,31 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
         const score = scan.score || 0;
         const grade = score >= 90 ? 'A' : score >= 80 ? 'B+' : score >= 70 ? 'B' : score >= 60 ? 'C+' : 'C';
 
-        const response: any = {
-            data: {
-                id: scan.scan_id,
-                url: scan.url,
-                status: scan.status,
-                score: scan.score,
-                grade: scan.status === 'completed' ? grade : undefined,
-                createdAt: scan.created_at,
-                completedAt: scan.completed_at,
-                errorMessage: scan.error_message,
-                results: scan.metrics ? {
-                    ...scan.metrics,
-                    categoryScores: scan.category_scores
-                } : undefined,
-                issues: issues,
-                summary: scan.status === 'completed' ? {
-                    criticalIssues: issues.filter((i: any) => i.category === 'critical').length,
-                    warnings: issues.filter((i: any) => i.severity === 'warning').length,
-                    passedChecks: Math.max(0, 50 - issues.length),
-                    totalChecks: 50
-                } : undefined
+        const response: HttpResponseInit = {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            jsonBody: {
+                data: {
+                    id: scan.scan_id,
+                    url: scan.url,
+                    status: scan.status,
+                    score: scan.score,
+                    grade: scan.status === 'completed' ? grade : undefined,
+                    createdAt: scan.created_at,
+                    completedAt: scan.completed_at,
+                    errorMessage: scan.error_message,
+                    results: scan.metrics ? {
+                        ...scan.metrics,
+                        categoryScores: scan.category_scores
+                    } : undefined,
+                    issues: issues,
+                    summary: scan.status === 'completed' ? {
+                        criticalIssues: issues.filter((i: any) => i.category === 'critical').length,
+                        warnings: issues.filter((i: any) => i.severity === 'warning').length,
+                        passedChecks: Math.max(0, 50 - issues.length),
+                        totalChecks: 50
+                    } : undefined
+                }
             }
         };
 
@@ -241,15 +268,12 @@ export async function getScan(request: HttpRequest, context: InvocationContext):
             hasResults: !!scan.metrics,
             issueCount: issues.length,
             userAgent: request.headers.get('user-agent'),
-            ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+            ipAddress: getClientIp(request),
             source: 'api'
         });
 
-        return {
-            status: 200,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-            jsonBody: response
-        };
+        // Add rate limit headers to response
+        return addRateLimitHeaders(response, RATE_LIMIT_CONFIGS.api.maxRequests, rateLimitResult.remaining, rateLimitResult.resetTime);
 
     } catch (error) {
         context.error('Error fetching scan:', error);
