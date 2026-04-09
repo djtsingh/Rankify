@@ -1,87 +1,50 @@
-/**
- * JWT Auth Middleware for Azure Functions
- * Validates Bearer tokens and extracts user context
- */
-
 import { HttpRequest } from "@azure/functions";
+import * as jwt from "jsonwebtoken";
 
-export interface AuthContext {
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key-change-in-prod";
+
+export interface TokenPayload {
   userId: string;
   email: string;
-  iat: number;
-  exp: number;
+  iat?: number;
+  exp?: number;
 }
 
-/**
- * Extract and validate JWT token from Authorization header
- * Token format: "Bearer <token>"
- */
 export function extractToken(request: HttpRequest): string | null {
   const auth = request.headers.get("authorization");
   if (!auth?.startsWith("Bearer ")) {
     return null;
   }
-  return auth.slice(7); // Remove "Bearer " prefix
+  return auth.slice(7);
 }
 
-/**
- * Decode JWT token (note: this is simplified verification)
- * In production, use a JWT library like jsonwebtoken
- * For now, assume token is valid if it exists and has Bearer prefix
- */
-export function decodeToken(token: string): AuthContext | null {
+export function verifyToken(token: string): TokenPayload | null {
   try {
-    // Base64 decode the payload (JWT format: header.payload.signature)
-    const parts = token.split(".");
-    if (parts.length !== 3) {
-      return null;
-    }
-
-    const payload = JSON.parse(
-      Buffer.from(parts[1], "base64").toString("utf-8")
-    );
-
-    // Verify expiry
-    if (payload.exp && payload.exp * 1000 < Date.now()) {
-      return null; // Token expired
-    }
-
-    return {
-      userId: payload.sub || payload.id,
-      email: payload.email,
-      iat: payload.iat,
-      exp: payload.exp,
-    };
-  } catch (error) {
+    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+  } catch {
     return null;
   }
 }
 
-/**
- * Verify authentication and return user context
- * Returns null if invalid
- */
-export function verifyAuth(request: HttpRequest): AuthContext | null {
+export function createToken(userId: string, email: string): string {
+  return jwt.sign(
+    { userId, email },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+}
+
+// Middleware to verify auth
+export function requireAuth(request: HttpRequest): { valid: boolean; userId?: string; email?: string; error?: string } {
   const token = extractToken(request);
   if (!token) {
-    return null;
+    return { valid: false, error: "Missing authentication token" };
   }
-  return decodeToken(token);
-}
 
-/**
- * Require auth middleware - returns 401 if not authenticated
- */
-export function requireAuth(request: HttpRequest): { status: number; jsonBody: any } | null {
-  const auth = verifyAuth(request);
-  if (!auth) {
-    return {
-      status: 401,
-      jsonBody: {
-        error: "Unauthorized",
-        message: "Missing or invalid Authorization header",
-      },
-    };
+  const payload = verifyToken(token);
+  if (!payload) {
+    return { valid: false, error: "Invalid or expired token" };
   }
-  return null;
+
+  return { valid: true, userId: payload.userId, email: payload.email };
 }

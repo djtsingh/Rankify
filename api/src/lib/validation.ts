@@ -191,6 +191,63 @@ export function validateScanUrl(
 // EMAIL VALIDATION
 // =============================================================================
 
+// =============================================================================
+// PASSWORD VALIDATION
+// =============================================================================
+
+/**
+ * Validate password strength
+ */
+export function validatePassword(password: string | undefined | null): ValidationResult<string> {
+  if (!password || typeof password !== 'string') {
+    return {
+      isValid: false,
+      error: 'Password is required',
+    };
+  }
+
+  const trimmed = password.trim();
+
+  if (trimmed.length < 8) {
+    return {
+      isValid: false,
+      error: 'Password must be at least 8 characters',
+    };
+  }
+
+  if (trimmed.length > 128) {
+    return {
+      isValid: false,
+      error: 'Password is too long',
+    };
+  }
+
+  // Check for at least one uppercase, one lowercase, one digit
+  const hasUpperCase = /[A-Z]/.test(trimmed);
+  const hasLowerCase = /[a-z]/.test(trimmed);
+  const hasDigit = /[0-9]/.test(trimmed);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(trimmed);
+
+  // At least 2 of these must be true
+  const strengthScore = [hasUpperCase, hasLowerCase, hasDigit, hasSpecialChar].filter(Boolean).length;
+  if (strengthScore < 2) {
+    return {
+      isValid: false,
+      error: 'Password must contain at least 2 of: uppercase letters, lowercase letters, numbers, special characters',
+    };
+  }
+
+  return {
+    isValid: true,
+    value: trimmed,
+  };
+}
+
+
+// =============================================================================
+// EMAIL VALIDATION
+// =============================================================================
+
 /**
  * Validate email address
  */
