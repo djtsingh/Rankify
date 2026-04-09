@@ -5,18 +5,21 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Copy source and lockfiles
+# Copy source and package files
 COPY package.json ./
 COPY apps/web ./apps/web
 
-# Install all dependencies using npm (convert from pnpm lockfile)
+# Install root dependencies
+RUN npm install
+
+# Also install web dependencies explicitly
+WORKDIR /app/apps/web
 RUN npm install
 
 # Build Next.js application (SSR mode - not static export)
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN cd apps/web && \
-    npx next build
+RUN npm run build
 
 # Stage 2: Runtime
 FROM node:22-alpine AS runtime
