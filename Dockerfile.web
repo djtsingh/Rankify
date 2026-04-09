@@ -16,7 +16,7 @@ RUN npm install
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN cd apps/web && \
-    ../../node_modules/.bin/next build
+    npx next build
 
 # Stage 2: Runtime
 FROM node:22-alpine AS runtime
