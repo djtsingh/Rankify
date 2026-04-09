@@ -32,9 +32,13 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Copy ENTIRE built app directory with node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web ./apps/web
+# Copy entire directory structure with all dependencies
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/package.json ./apps/web/package.json
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next ./apps/web/.next
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 
 # Set working directory for next start
 WORKDIR /app/apps/web
@@ -49,7 +53,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 # Switch to non-root user
 USER nextjs
 
-# Start app - next start needs node_modules in scope
-ENV NODE_PATH=/app/node_modules
+# Start app - use npm start which runs "next start"
 ENTRYPOINT ["/sbin/dumb-init", "--"]
-CMD ["node_modules/.bin/next", "start"]
+CMD ["npm", "start"]
