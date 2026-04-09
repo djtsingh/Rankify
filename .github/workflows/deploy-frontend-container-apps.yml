@@ -113,4 +113,3 @@ jobs:
           echo "Image: ${{ env.REGISTRY }}/rankify-frontend:latest"
           echo "Commit: ${{ github.sha }}"
           echo "Status: Deployment workflow completed"
-// Workflow trigger
