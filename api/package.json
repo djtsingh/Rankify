@@ -18,8 +18,13 @@
     "@azure/functions": "^4.0.0",
     "@azure/storage-queue": "^12.28.1",
     "@prisma/client": "5.22.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^18.19.130",
+    "@types/nodemailer": "^8.0.0",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.5",
     "prisma": "5.22.0",
     "typescript": "^5.9.3"
   },

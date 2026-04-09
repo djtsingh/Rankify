@@ -48,3 +48,9 @@ export function requireAuth(request: HttpRequest): { valid: boolean; userId?: st
 
   return { valid: true, userId: payload.userId, email: payload.email };
 }
+
+// Legacy alias for compatibility
+export async function verifyAuth(request: HttpRequest): Promise<string | null> {
+  const auth = requireAuth(request);
+  return auth.valid ? auth.userId || null : null;
+}

@@ -3,20 +3,10 @@ import { prisma } from "../lib/prisma";
 import { randomUUID } from "crypto";
 import { checkRateLimit, RATE_LIMIT_CONFIGS, getClientIp, addRateLimitHeaders } from "../lib/rate-limit";
 import { validateScanUrl } from "../lib/validation";
-
-// Verify user is authenticated (simplified - in prod, validate JWT)
-async function verifyAuth(request: HttpRequest): Promise<string | null> {
-  const auth = request.headers.get("authorization");
-  if (!auth?.startsWith("Bearer ")) {
-    return null;
-  }
-  // In production, validate the JWT token here
-  // For now, extract userId from token (stub)
-  return "user-from-token";
-}
+import { verifyAuth } from "../lib/jwt-auth";
 
 // CREATE project
-export async function createProject(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
+app.post("createProject", async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
   try {
     // Rate limit
     const rateLimitResult = checkRateLimit(request, RATE_LIMIT_CONFIGS.api);
