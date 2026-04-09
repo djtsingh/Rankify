@@ -1,22 +1,17 @@
 # Multi-stage Dockerfile for Rankify Next.js SSR frontend
 # Production-ready, security-hardened, minimal image size
 
-# Stage 1: Dependencies
-FROM node:22-alpine AS deps
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-COPY apps/web/package.json ./apps/web/
-RUN npm install -g pnpm@latest && \
-    pnpm install --frozen-lockfile --prod=false
-
-# Stage 2: Builder
+# Stage 1: Builder + deps
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Copy dependencies and source
-COPY --from=deps /app/node_modules ./node_modules
+# Copy source and lockfiles
 COPY package.json pnpm-lock.yaml ./
 COPY apps/web ./apps/web
+
+# Install all dependencies (dev + prod)
+RUN npm install -g pnpm@latest && \
+    pnpm install --frozen-lockfile
 
 # Build Next.js application (SSR mode - not static export)
 ENV NODE_ENV=production
@@ -24,7 +19,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN cd apps/web && \
     npx next build
 
-# Stage 3: Runtime
+# Stage 2: Runtime
 FROM node:22-alpine AS runtime
 WORKDIR /app
 
@@ -35,11 +30,9 @@ RUN apk add --no-cache dumb-init
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Copy node_modules (includes all deps needed for next start)
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=deps --chown=nextjs:nodejs /app/package.json ./
-
-# Copy built Next.js app
+# Copy dependencies and apps
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next ./apps/web/.next
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/package.json ./apps/web/
